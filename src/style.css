@@ -8,7 +8,7 @@
   --text-primary: #f1f5f9;
   --text-secondary: #94a3b8;
   --text-muted: #475569;
-  --accent-ui: #f97316; /* Airline orange */
+  --accent-ui: #00b0ff; /* Aviation cyan-blue */
   
   /* Fonts */
   --font-display: 'Outfit', 'Noto Sans', 'Noto Sans Thai', sans-serif;
@@ -42,8 +42,8 @@ body {
   display: flex;
   flex-direction: column;
   background-image: 
-    radial-gradient(circle at top right, rgba(249, 115, 22, 0.03) 0%, transparent 50%),
-    radial-gradient(circle at bottom left, rgba(31, 85, 255, 0.02) 0%, transparent 50%);
+    radial-gradient(circle at top right, rgba(29, 185, 84, 0.04) 0%, transparent 50%),
+    radial-gradient(circle at bottom left, rgba(0, 176, 255, 0.03) 0%, transparent 50%);
 }
 
 #app {
@@ -164,16 +164,18 @@ header p {
   }
 }
 
-/* Control Panel Panel (Clean Matte Interface) */
+/* Control Panel Panel (Frosted Glassmorphism Terminal) */
 .controls-panel {
-  background-color: var(--panel-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 1rem;
+  background: rgba(18, 20, 24, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 1.25rem;
   padding: 2rem;
   display: flex;
   flex-direction: column;
   gap: 1.75rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.05);
 }
 
 .panel-section {

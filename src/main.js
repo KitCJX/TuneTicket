@@ -158,8 +158,8 @@ function renderApp() {
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%">
             <defs>
               <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#FF512F" />
-                <stop offset="100%" stop-color="#DD2476" />
+                <stop offset="0%" stop-color="#1DB954" />
+                <stop offset="100%" stop-color="#00b0ff" />
               </linearGradient>
             </defs>
             <circle cx="50" cy="50" r="40" fill="url(#logoGrad)" opacity="0.1"/>
@@ -171,7 +171,7 @@ function renderApp() {
         </div>
         <h1>TuneTicket</h1>
       </div>
-      <p>Clean Spotify track share ticket. Safe browser authentication, full multi-language Support.</p>
+      <p>Your musical journey, printed on a premium flight ticket. Safe client-side authorization, custom themes, and full multi-language support.</p>
     </header>
 
     <main class="dashboard">
