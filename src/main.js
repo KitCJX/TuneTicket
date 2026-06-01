@@ -193,13 +193,15 @@ function renderApp() {
               </button>
             </div>
           ` : `
-            <div class="input-group">
-              <label class="input-label" for="client-id-field">Spotify Client ID</label>
-              <input type="text" id="client-id-field" class="input-field" placeholder="Enter your Spotify Client ID..." value="${state.clientId}">
-              <p class="help-text">
-                Need a client ID? Check <a href="#explainer-sec">instructions below</a> to set up in 2 minutes. Authentication runs client-side only.
-              </p>
-            </div>
+            ${!ENV_CLIENT_ID ? `
+              <div class="input-group">
+                <label class="input-label" for="client-id-field">Spotify Client ID</label>
+                <input type="text" id="client-id-field" class="input-field" placeholder="Enter your Spotify Client ID..." value="${state.clientId}">
+                <p class="help-text">
+                  Need a client ID? Check <a href="#explainer-sec">instructions below</a> to set up in 2 minutes. Authentication runs client-side only.
+                </p>
+              </div>
+            ` : ''}
             
             <button id="login-btn" class="btn btn-primary" ${!state.clientId ? 'disabled' : ''}>
               Connect Spotify
@@ -443,18 +445,20 @@ function renderApp() {
     </main>
 
     <!-- Detailed Instruction Panel -->
-    <section class="explainer" id="explainer-sec">
-      <h2>How to run this with your Spotify Developer Account</h2>
-      <ol>
-        <li>Log in to the <strong><a href="https://developer.spotify.com/dashboard" target="_blank" rel="noopener">Spotify Developer Dashboard</a></strong>.</li>
-        <li>Select <strong>Create App</strong> (Name it anything: e.g. <em>My Boarding Pass</em>).</li>
-        <li>Configure the <strong>Redirect URI</strong> field to exactly match your current URL: 
-          <code>${window.location.origin + window.location.pathname}</code>
-        </li>
-        <li>Enable <strong>Web API</strong> checkbox under settings and Save.</li>
-        <li>Copy your <strong>Client ID</strong> from the app info, paste it in the sidebar box, and click <strong>Connect Spotify</strong>!</li>
-      </ol>
-    </section>
+    ${!ENV_CLIENT_ID ? `
+      <section class="explainer" id="explainer-sec">
+        <h2>How to run this with your Spotify Developer Account</h2>
+        <ol>
+          <li>Log in to the <strong><a href="https://developer.spotify.com/dashboard" target="_blank" rel="noopener">Spotify Developer Dashboard</a></strong>.</li>
+          <li>Select <strong>Create App</strong> (Name it anything: e.g. <em>My Boarding Pass</em>).</li>
+          <li>Configure the <strong>Redirect URI</strong> field to exactly match your current URL: 
+            <code>${window.location.origin + window.location.pathname}</code>
+          </li>
+          <li>Enable <strong>Web API</strong> checkbox under settings and Save.</li>
+          <li>Copy your <strong>Client ID</strong> from the app info, paste it in the sidebar box, and click <strong>Connect Spotify</strong>!</li>
+        </ol>
+      </section>
+    ` : ''}
   `;
 
   bindEvents();
