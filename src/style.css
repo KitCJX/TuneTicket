@@ -175,7 +175,7 @@ header p {
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.05);
   width: 100%;
   min-width: 0;
-  order: 2; /* Render below preview on mobile */
+  order: 1; /* Render above preview on mobile */
 }
 
 .panel-section {
@@ -467,14 +467,14 @@ header p {
   width: 100%;
   min-width: 0;
   overflow: hidden;
-  order: 1; /* Render at the top on mobile */
+  order: 2; /* Render below controls on mobile */
 }
 
 /* Scroll wrapper: hides overflow and transitions height during resize scaling */
 .card-scroll-wrapper {
   width: 100%;
   overflow: hidden; 
-  padding: 1rem 0 2rem;
+  margin: 1rem 0 2rem; /* Using margin instead of padding to prevent vertical absolute clipping */
   display: flex;
   justify-content: center;
   align-items: flex-start;
@@ -1080,7 +1080,7 @@ header p {
 }
 
 /* --------------------------------------------------------------------------
-   LUGGAGE TAG LAYOUT (Vertical 380px x 620px)
+   LUGGAGE TAG LAYOUT (Vertical 380px x 680px)
    -------------------------------------------------------------------------- */
 .luggage-tag {
   background-color: var(--card-bg);
@@ -1089,7 +1089,7 @@ header p {
   color: var(--card-text);
   font-family: var(--font-mono);
   width: 380px;
-  height: 620px;
+  height: 680px; /* Increased to fit Top 5 manifest without clipping footer barcodes */
   display: flex;
   flex-direction: column;
   position: relative;

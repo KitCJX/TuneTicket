@@ -317,7 +317,7 @@ function resizeCard() {
   
   const isTag = state.previewMode === 'tag';
   const cardWidth = isTag ? 380 : 780; // Fixed width of card
-  const cardHeight = isTag ? 620 : 440; // Fixed height of card
+  const cardHeight = isTag ? 680 : 440; // Fixed height of card
   
   // Set explicit size of shadow wrapper to match preview mode
   card.style.width = `${cardWidth}px`;
@@ -326,6 +326,7 @@ function resizeCard() {
   // Apply absolute positioning dynamically to prevent layout bloat on parent containers
   card.style.position = 'absolute';
   card.style.left = '50%';
+  card.style.top = '0';
   card.style.marginLeft = `-${cardWidth / 2}px`;
 
   let activeWidth = container.offsetWidth;
