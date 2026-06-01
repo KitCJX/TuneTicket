@@ -35,33 +35,27 @@ Your musical journey, printed on a premium flight boarding pass.
 
 ## 🚀 Getting Started
 
-### 1. Register a Spotify Developer App
-To use this application, you need a Spotify Client ID:
-1. Go to the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard).
-2. Click **Create App** (e.g. name it *TuneTicket*).
-3. Under App settings, select the **Web API** checkbox.
-4. Add **`http://localhost:5173/`** (and your production Vercel URL) to the **Redirect URIs** list and save.
+### 1. Deploy the Application
+Since the Spotify Developer Dashboard requires a secure, live production URL (`https://`) and does not support local redirects (`localhost`) for application authentication:
+1. Push this project to your GitHub repository.
+2. Import the repository into **[Vercel](https://vercel.com/)** (or your preferred hosting provider).
+3. Copy your live deployment URL (e.g. `https://tuneticket.vercel.app/`).
 
-### 2. Run Locally
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/KitCJX/TuneTicket.git
-   cd TuneTicket
-   ```
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Setup environment variables:
-   Create a `.env` file in the root directory:
-   ```env
-   VITE_SPOTIFY_CLIENT_ID=your_spotify_client_id_here
-   ```
-4. Run the development server:
-   ```bash
-   npm run dev
-   ```
-5. Open **`http://localhost:5173/`** in your browser!
+### 2. Register a Spotify Developer App
+To authorize Spotify connections, you need a Client ID:
+1. Go to the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard).
+2. Click **Create App** (name it *TuneTicket*).
+3. Under App Settings, check the **Web API** option.
+4. Paste your live deployment URL (e.g. `https://tuneticket.vercel.app/`) into the **Redirect URIs** field, click **Add**, and click **Save** at the bottom of the page.
+5. Copy your **Client ID** from the Spotify App details page.
+
+### 3. Add Client ID to Vercel
+1. Go to your project settings in Vercel.
+2. Select **Environment Variables** in the left sidebar.
+3. Add a new variable:
+   - **Key:** `VITE_SPOTIFY_CLIENT_ID`
+   - **Value:** *(Paste your Spotify Client ID here)*
+4. Click **Save** and trigger a rebuild of the application. Your users can now log in securely!
 
 ---
 
