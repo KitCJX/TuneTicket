@@ -295,8 +295,10 @@ function renderApp() {
                     </div>
                     
                     <div class="route-connector">
-                      <span class="route-line"></span>
-                      <span class="route-plane">${ICONS.plane}</span>
+                      <div class="route-line-wrapper">
+                        <span class="route-line"></span>
+                        <span class="route-plane">${ICONS.plane}</span>
+                      </div>
                       <span class="flight-duration-lbl">FLIGHT TT26</span>
                     </div>
 

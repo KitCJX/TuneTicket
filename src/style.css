@@ -653,8 +653,17 @@ header p {
   display: flex;
   flex-direction: column;
   align-items: center;
-  position: relative;
+  justify-content: center;
   padding: 0 1rem;
+}
+
+.route-line-wrapper {
+  width: 100%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 16px;
 }
 
 .route-line {
@@ -665,12 +674,16 @@ header p {
 
 .route-plane {
   position: absolute;
-  top: 50%;
   left: 50%;
+  top: 50%;
   transform: translate(-50%, -50%);
   background-color: var(--card-bg);
   padding: 0 0.5rem;
   color: var(--accent-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
 }
 
 .route-plane svg {
@@ -685,7 +698,7 @@ header p {
   text-transform: uppercase;
   color: var(--card-text-muted);
   letter-spacing: 0.04em;
-  margin-top: 0.25rem;
+  margin-top: 0.15rem;
 }
 
 /* Flight Details Data Matrix */
