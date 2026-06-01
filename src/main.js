@@ -100,6 +100,51 @@ function resizeCard() {
   }
 }
 
+const COUNTRY_NAMES = {
+  TH: 'THAILAND',
+  US: 'UNITED STATES',
+  JP: 'JAPAN',
+  KR: 'SOUTH KOREA',
+  GB: 'UNITED KINGDOM',
+  DE: 'GERMANY',
+  FR: 'FRANCE',
+  CA: 'CANADA',
+  AU: 'AUSTRALIA',
+  SG: 'SINGAPORE',
+  MY: 'MALAYSIA',
+  ID: 'INDONESIA',
+  VN: 'VIETNAM',
+  PH: 'PHILIPPINES',
+  IN: 'INDIA',
+  BR: 'BRAZIL',
+  MX: 'MEXICO',
+  ES: 'SPAIN',
+  IT: 'ITALY',
+  NL: 'NETHERLANDS',
+  SE: 'SWEDEN',
+  NO: 'NORWAY',
+  FI: 'FINLAND',
+  DK: 'DENMARK',
+  NZ: 'NEW ZEALAND',
+  HK: 'HONG KONG',
+  TW: 'TAIWAN'
+};
+
+function getCountryName(code) {
+  return COUNTRY_NAMES[code] || 'WORLD CITIZEN';
+}
+
+function detectUserCountry() {
+  const locale = navigator.language || '';
+  if (locale.includes('-')) {
+    return locale.split('-')[1].toUpperCase();
+  }
+  if (locale.length === 2) {
+    return locale.toUpperCase();
+  }
+  return 'US';
+}
+
 // Generate PNR / Flight details deterministically
 function getTicketMetadata() {
   const user = state.isMockData ? MOCK_PROFILE.display_name : (state.userProfile?.display_name || 'TRAVELER');
@@ -130,7 +175,13 @@ function getTicketMetadata() {
     pnr = 'LGALLT';
   }
 
-  const barcodeMainVal = `${pnr}-SP-2026-SEQ01`;
+  // Easter egg: dynamically detect country code for destination
+  const countryCode = state.isMockData ? detectUserCountry() : (state.userProfile?.country || 'US');
+  const destCode = countryCode ? countryCode.toUpperCase().slice(0, 3) : 'TUN';
+  const destCity = getCountryName(destCode);
+
+  // Easter egg: dynamic barcode value showing the country code and a fun message
+  const barcodeMainVal = `TKT-${destCode}-${pnr}-MUSIC-FLY`;
 
   return {
     passenger: state.customPassengerName || formattedUser,
@@ -139,7 +190,9 @@ function getTicketMetadata() {
     dateText,
     classText,
     pnr,
-    barcodeMainVal
+    barcodeMainVal,
+    destCode,
+    destCity
   };
 }
 
@@ -303,9 +356,9 @@ function renderApp() {
                     </div>
 
                     <div class="airport-info" style="text-align: right;">
-                      <span class="val-large">TUN</span>
-                      <span class="airport-city">Tune Destination</span>
-                    </div>
+                       <span class="val-large">${meta.destCode}</span>
+                       <span class="airport-city">${meta.destCity}</span>
+                     </div>
                   </div>
 
                   <!-- Flight Detail Grid -->
@@ -383,8 +436,8 @@ function renderApp() {
                     </div>
                     <span class="lbl" style="font-size:0.8rem; margin:0 0.25rem;">&gt;</span>
                     <div style="text-align: right;">
-                      <div class="val-large" style="font-size: 1.6rem; line-height:1;">TUN</div>
-                      <div class="lbl" style="font-size:0.5rem;">Tune Destination</div>
+                      <div class="val-large" style="font-size: 1.6rem; line-height:1;">${meta.destCode}</div>
+                      <div class="lbl" style="font-size:0.5rem;">${meta.destCity}</div>
                     </div>
                   </div>
 
