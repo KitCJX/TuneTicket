@@ -159,8 +159,8 @@ function getCargoStats(tracks) {
     passengerClass = 'PREMIUM CLASS';
   }
   
-  // Wave peak Y coordinate mapping: peak Y runs 5 (high curve) to 30 (flat curve)
-  const wavePeakY = Math.max(5, 35 - Math.round(avgPopularity * 0.3));
+  // Wave peak Y coordinate mapping: peak Y runs 2 (high curve) to 14 (flat curve) relative to a 20px box
+  const wavePeakY = Math.max(2, 14 - Math.round(avgPopularity * 0.12));
   
   let flightNo = 'TT26';
   if (state.timeRange === 'short_term') flightNo = 'SW04';
@@ -210,11 +210,6 @@ function toggleTrackPreview(trackId, previewUrl) {
 // Renders the luggage tag companion HTML template
 function renderLuggageTagHTML(meta, stats, tracksList) {
   const topTrack = tracksList[0] || { name: 'TOP TRACK', artists: [{ name: 'ARTIST' }] };
-  const firstArtist = topTrack.artists[0]?.name || 'UNKNOWN ARTIST';
-  
-  let topGenre = 'POP / ROCK';
-  if (topTrack.name.length % 3 === 0) topGenre = 'INDIE / ALTERNATIVE';
-  else if (topTrack.name.length % 3 === 1) topGenre = 'HIP-HOP / R&B';
   
   return `
     <div class="luggage-tag" data-theme="${state.theme}">
@@ -230,7 +225,7 @@ function renderLuggageTagHTML(meta, stats, tracksList) {
           <span class="val" style="font-size: 0.65rem; color: var(--card-text-muted); display: block; margin-bottom: 0.1rem;">FROM</span>
           <span class="val-large" style="font-size: 2.2rem; line-height: 1.0;">SPO</span>
         </div>
-        <div style="font-size: 1.6rem; color: var(--accent-secondary); font-weight: 800;">➔</div>
+        <div style="font-size: 1.6rem; color: var(--accent-secondary); font-weight: 800; transform: translateY(-4px);">➔</div>
         <div style="text-align: right;">
           <span class="val" style="font-size: 0.65rem; color: var(--card-text-muted); display: block; margin-bottom: 0.1rem;">TO</span>
           <span class="tag-dest-large">${meta.destCode}</span>
@@ -240,7 +235,7 @@ function renderLuggageTagHTML(meta, stats, tracksList) {
       <div class="tag-info-grid">
         <div class="tag-info-cell-wide">
           <div class="lbl">Passenger</div>
-          <div class="val" style="font-size: 1.0rem; line-height: 1.2;">${meta.passenger}</div>
+          <div class="val" style="font-size: 0.95rem; line-height: 1.2;">${meta.passenger}</div>
         </div>
         <div>
           <div class="lbl">Seat</div>
@@ -256,28 +251,48 @@ function renderLuggageTagHTML(meta, stats, tracksList) {
         </div>
       </div>
       
+      <!-- Tag Manifest: Top 5 Tracks (Like Boarding Pass but vertical) -->
       <div class="tag-cargo-manifest">
-        <div class="tag-cargo-title">Priority Cargo (Top Track)</div>
-        <div style="background: rgba(0,0,0,0.03); border-radius: 4px; padding: 0.65rem; border-left: 3px solid var(--accent-secondary); margin-bottom: 0.75rem;">
-          <div class="lbl" style="color: var(--accent-secondary); margin-bottom: 0.1rem; font-size: 0.55rem;">Priority load #01</div>
-          <div class="val" style="font-size: 0.9rem; font-weight: 900; white-space: normal; line-height: 1.1; margin-bottom: 0.15rem;">${topTrack.name}</div>
-          <div style="font-size: 0.7rem; font-weight: 600; color: var(--card-text-muted);">${firstArtist}</div>
+        <div class="tag-cargo-title">Stopover Manifest / Cargo Details</div>
+        <div class="manifest-list" style="margin-bottom: 0.85rem; display: flex; flex-direction: column; gap: 0.45rem;">
+          ${tracksList.slice(0, 5).map((track, i) => {
+            const hasPreview = !!track.preview_url;
+            const isPlaying = state.currentlyPlayingTrackId === track.id;
+            return `
+              <div class="manifest-row ${isPlaying ? 'playing' : ''} ${hasPreview ? 'has-preview' : ''}" style="font-size: 0.72rem; height: 18px; display: flex; justify-content: space-between; align-items: center; line-height: 1.1; overflow: hidden;" data-track-id="${track.id || `mock-${i}`}" data-preview-url="${track.preview_url || ''}">
+                <span style="color: var(--accent-secondary); width: 18px; font-weight: 800; display: inline-flex; align-items: center;">
+                  ${isPlaying ? `
+                    <span class="audio-indicator" style="margin-left: 0; width: 8px; height: 8px;">
+                      <span class="audio-bar" style="width: 1.5px;"></span>
+                      <span class="audio-bar" style="width: 1.5px;"></span>
+                      <span class="audio-bar" style="width: 1.5px;"></span>
+                    </span>
+                  ` : (i + 1).toString().padStart(2, '0')}
+                </span>
+                <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 0.5rem; text-align: left; display: flex; align-items: center;">
+                  ${hasPreview ? `<span class="play-row-icon" style="font-size: 0.55rem; margin-right: 2px;">▶</span>` : ''}
+                  <strong>${track.name}</strong> <span style="font-weight:500; color: var(--card-text-muted); margin-left: 4px;">- ${track.artists.map(a => a.name).join(', ')}</span>
+                </span>
+                <span style="font-family: var(--font-mono); color: var(--card-text-muted); font-size: 0.65rem;">${formatDuration(track.duration_ms)}</span>
+              </div>
+            `;
+          }).join('')}
         </div>
         
         <div class="tag-cargo-title">Aviation Load Specs</div>
-        <div class="tag-cargo-item">
+        <div class="tag-cargo-item" style="font-size: 0.7rem; line-height: 1.5;">
           <span>Flight Duration:</span>
           ${stats.flightTime}
         </div>
-        <div class="tag-cargo-item">
+        <div class="tag-cargo-item" style="font-size: 0.7rem; line-height: 1.5;">
           <span>Cruising Altitude:</span>
           ${stats.cruisingAltitude}
         </div>
-        <div class="tag-cargo-item">
+        <div class="tag-cargo-item" style="font-size: 0.7rem; line-height: 1.5;">
           <span>Baggage Weight:</span>
           ${stats.baggageWeight}
         </div>
-        <div class="tag-cargo-item">
+        <div class="tag-cargo-item" style="font-size: 0.7rem; line-height: 1.5;">
           <span>Cabin Class:</span>
           ${stats.passengerClass}
         </div>
@@ -610,17 +625,17 @@ function renderApp() {
                       </div>
                       
                       <div class="route-connector" style="width: 100%; height: 35px; justify-content: center; position: relative;">
-                        <div class="route-line-wrapper" style="width: 100%; height: 35px; position: relative;">
-                          <svg viewBox="0 0 100 40" preserveAspectRatio="none" style="width: 100%; height: 100%; position: absolute; top: 0; left: 0; overflow: visible;">
-                            <path class="route-line-curved" d="M 0,35 Q 50,${stats.wavePeakY} 100,35" />
+                        <div class="route-line-wrapper" style="width: 100%; height: 20px; position: relative;">
+                          <svg viewBox="0 0 100 20" preserveAspectRatio="none" style="width: 100%; height: 100%; position: absolute; top: 0; left: 0; overflow: visible;">
+                            <path class="route-line-curved" d="M 0,16 Q 50,${stats.wavePeakY} 100,16" />
                           </svg>
-                          <span class="route-plane" style="position: absolute; left: 50%; top: calc(${stats.wavePeakY}px - 6px); transform: translate(-50%, -50%); background-color: var(--card-bg); padding: 0 0.4rem; z-index: 2; height: 16px;">
-                            <span style="display: flex; align-items: center; justify-content: center; transform: rotate(90deg); color: var(--accent-secondary);">
+                          <span class="route-plane" style="position: absolute; left: 50%; top: ${stats.wavePeakY}px; transform: translate(-50%, -50%); background-color: var(--card-bg); padding: 0 0.4rem; z-index: 2; height: 14px; display: flex; align-items: center;">
+                            <span style="display: flex; align-items: center; justify-content: center; transform: rotate(90deg); color: var(--accent-secondary); width: 14px; height: 14px;">
                               ${ICONS.plane}
                             </span>
                           </span>
                         </div>
-                        <span class="flight-duration-lbl" style="margin-top: 0.15rem; font-size: 0.55rem; z-index: 10;">FLIGHT ${stats.flightNo}</span>
+                        <span class="flight-duration-lbl" style="font-size: 0.55rem; z-index: 10; margin-top: 0.2rem;">FLIGHT ${stats.flightNo}</span>
                       </div>
 
                       <div class="airport-info" style="text-align: right;">
