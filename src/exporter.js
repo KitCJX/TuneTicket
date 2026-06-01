@@ -25,7 +25,7 @@ export async function exportElementAsImage(element, filename = 'tuneticket-board
       onclone: (clonedDoc) => {
         // Here we can perform adjustments on the cloned document if needed
         // For example, making sure there are no rendering glitches
-        const clonedCard = clonedDoc.querySelector('.boarding-pass');
+        const clonedCard = clonedDoc.querySelector('.boarding-pass') || clonedDoc.querySelector('.luggage-tag');
         if (clonedCard) {
           clonedCard.style.transform = 'none';
           clonedCard.style.boxShadow = 'none';
