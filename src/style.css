@@ -355,6 +355,25 @@ header p {
   filter: brightness(1.15);
 }
 
+.btn-spotify {
+  background: #1db954;
+  color: #ffffff;
+  border-radius: 500px !important; /* Pill shape matching Spotify CI */
+  text-transform: none !important; /* Normal casing matching Spotify branding */
+  font-weight: 700;
+  letter-spacing: normal;
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.btn-spotify:hover:not(:disabled) {
+  background: #1ed760;
+  transform: translateY(-1px);
+}
+
+.btn-spotify svg {
+  fill: #ffffff !important;
+}
+
 .btn-success {
   background: #10b981;
   color: white;
