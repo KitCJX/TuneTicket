@@ -5,8 +5,7 @@ import {
   getAccessToken, 
   fetchUserProfile, 
   fetchTopTracks, 
-  logout,
-  createSpotifyPlaylist
+  logout
 } from './spotify';
 import { exportElementAsImage, copyElementToClipboard } from './exporter';
 
@@ -47,8 +46,7 @@ const state = {
   isLoading: false,
   errorMessage: '',
   previewMode: 'ticket',     // 'ticket' | 'tag'
-  playlistUrl: '',
-  playlistLoading: false,
+
   currentlyPlayingTrackId: null,
   clipboardStatus: ''        // '', 'copied', 'error'
 };
@@ -269,7 +267,7 @@ function renderLuggageTagHTML(meta, stats, tracksList) {
                     </span>
                   ` : (i + 1).toString().padStart(2, '0')}
                 </span>
-                <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 0.5rem; text-align: left; display: flex; align-items: center;">
+                <span style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 0.5rem; text-align: left; display: block;">
                   ${hasPreview ? `<span class="play-row-icon" style="font-size: 0.55rem; margin-right: 2px;">▶</span>` : ''}
                   <strong>${track.name}</strong> <span style="font-weight:500; color: var(--card-text-muted); margin-left: 4px;">- ${track.artists.map(a => a.name).join(', ')}</span>
                 </span>
@@ -545,9 +543,9 @@ function renderApp() {
           </div>
         </div>
 
-        <!-- Step 4: Export Options & Playlists -->
+        <!-- Step 4: Export Options -->
         <div class="panel-section">
-          <h3>4. Get Ticket & Playlist</h3>
+          <h3>4. Get Ticket</h3>
           
           <button id="download-btn" class="btn btn-spotify" style="margin-bottom: 0.5rem;">
             ${ICONS.download} Save Image
@@ -556,23 +554,6 @@ function renderApp() {
           <button id="clipboard-btn" class="btn btn-outline btn-clipboard" style="margin-bottom: 0.5rem;">
             Copy to Clipboard
           </button>
-          
-          ${state.isLoggedIn ? `
-            <button id="playlist-btn" class="btn btn-outline btn-playlist-create" ${state.playlistLoading ? 'disabled' : ''}>
-              ${state.playlistLoading ? '<div class="spinner" style="width:14px;height:14px;margin:0;border-width:2px;display:inline-block;vertical-align:middle;margin-right:8px;"></div> Creating...' : 'Create Spotify Playlist'}
-            </button>
-          ` : `
-            <button class="btn btn-outline" disabled title="Connect Spotify to create playlists">
-              Create Playlist (Connect Req.)
-            </button>
-          `}
-          
-          ${state.playlistUrl ? `
-            <div class="playlist-success-box">
-              <span>✈️ Playlist Created!</span>
-              <a href="${state.playlistUrl}" target="_blank" rel="noopener">Open Playlist on Spotify</a>
-            </div>
-          ` : ''}
           
           ${state.clipboardStatus === 'copied' ? `
             <div class="playlist-success-box" style="background: rgba(59, 130, 246, 0.08); border-color: rgba(59, 130, 246, 0.2); color: #60a5fa;">
@@ -788,7 +769,7 @@ function renderApp() {
                                   </span>
                                 ` : (i + 6).toString().padStart(2, '0')}
                               </span>
-                              <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 0.25rem; text-align: left; display: flex; align-items: center;">
+                              <span style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 0.25rem; text-align: left; display: block;">
                                 ${hasPreview ? `<span class="play-row-icon" style="font-size: 0.5rem; margin-right: 2px;">▶</span>` : ''}
                                 <strong>${track.name}</strong> <span style="font-weight:500; color: var(--card-text-muted);">- ${track.artists[0].name}</span>
                               </span>
@@ -1059,42 +1040,7 @@ function bindEvents() {
     });
   }
 
-  // Create Spotify Playlist Action
-  const playlistBtn = document.getElementById('playlist-btn');
-  if (playlistBtn) {
-    playlistBtn.addEventListener('click', async () => {
-      if (!state.isLoggedIn || !state.token) return;
-      
-      state.playlistLoading = true;
-      state.playlistUrl = '';
-      renderApp();
-      
-      try {
-        playAirportChime(); // Play chime!
-        const tracksList = state.topTracks;
-        const trackUris = tracksList.map(t => t.uri).filter(Boolean);
-        
-        let rangeText = 'Medium Term (6 Months)';
-        if (state.timeRange === 'short_term') rangeText = 'Short Term (4 Weeks)';
-        else if (state.timeRange === 'long_term') rangeText = 'Long Term (All-Time)';
-        
-        const playlist = await createSpotifyPlaylist(
-          state.token,
-          state.userProfile.id,
-          trackUris,
-          rangeText
-        );
-        
-        state.playlistUrl = playlist.external_urls?.spotify || '';
-        state.errorMessage = '';
-      } catch (err) {
-        state.errorMessage = 'Playlist generation failed: ' + err.message;
-      } finally {
-        state.playlistLoading = false;
-        renderApp();
-      }
-    });
-  }
+  // Playlist creation button listener removed as requested
 }
 
 // Check tokens on redirect callback
