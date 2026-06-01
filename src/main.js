@@ -315,7 +315,6 @@ function resizeCard() {
   const card = document.querySelector('.card-wrapper-shadow');
   if (!container || !card) return;
   
-  const containerWidth = container.offsetWidth;
   const isTag = state.previewMode === 'tag';
   const cardWidth = isTag ? 380 : 780; // Fixed width of card
   const cardHeight = isTag ? 620 : 440; // Fixed height of card
@@ -329,8 +328,14 @@ function resizeCard() {
   card.style.left = '50%';
   card.style.marginLeft = `-${cardWidth / 2}px`;
 
-  if (containerWidth < cardWidth) {
-    const scale = containerWidth / cardWidth;
+  let activeWidth = container.offsetWidth;
+  if (activeWidth === 0) {
+    // Robust fallback: use viewport width minus padding if container offsetWidth is not yet calculated
+    activeWidth = Math.min(window.innerWidth - 32, 1300);
+  }
+
+  if (activeWidth < cardWidth) {
+    const scale = activeWidth / cardWidth;
     card.style.transform = `scale(${scale})`;
     card.style.transformOrigin = 'center top';
     container.style.height = `${cardHeight * scale}px`;

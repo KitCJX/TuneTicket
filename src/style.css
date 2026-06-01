@@ -41,6 +41,7 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  overflow-x: hidden;
   background-image: 
     radial-gradient(circle at top right, rgba(29, 185, 84, 0.04) 0%, transparent 50%),
     radial-gradient(circle at bottom left, rgba(0, 176, 255, 0.03) 0%, transparent 50%);
@@ -158,22 +159,7 @@ header p {
   min-width: 0;
 }
 
-@media (min-width: 1024px) {
-  .dashboard {
-    grid-template-columns: 360px 1fr;
-    align-items: start;
-  }
-  
-  .controls-panel {
-    grid-column: 1;
-    grid-row: 1;
-  }
-  
-  .preview-container {
-    grid-column: 2;
-    grid-row: 1;
-  }
-}
+/* Moved desktop layout media query to the bottom of the file to preserve override cascade ordering */
 
 /* Control Panel Panel (Frosted Glassmorphism Terminal) */
 .controls-panel {
@@ -189,7 +175,7 @@ header p {
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.05);
   width: 100%;
   min-width: 0;
-  grid-row: 2; /* Render below preview on mobile */
+  order: 2; /* Render below preview on mobile */
 }
 
 .panel-section {
@@ -481,7 +467,7 @@ header p {
   width: 100%;
   min-width: 0;
   overflow: hidden;
-  grid-row: 1; /* Render at the top on mobile */
+  order: 1; /* Render at the top on mobile */
 }
 
 /* Scroll wrapper: hides overflow and transitions height during resize scaling */
@@ -497,7 +483,9 @@ header p {
 }
 
 .card-wrapper-shadow {
-  position: relative;
+  position: absolute;
+  left: 50%;
+  margin-left: -390px; /* Centering offset for 780px width */
   flex-shrink: 0; /* Prevents squishing */
   width: 780px;
   height: 440px;
@@ -1403,6 +1391,26 @@ header p {
   .theme-btn {
     font-size: 0.75rem;
     padding: 0.65rem 0.5rem;
+  }
+}
+
+/* Desktop Layout Optimization Tweaks */
+@media (min-width: 1024px) {
+  .dashboard {
+    grid-template-columns: 360px 1fr;
+    align-items: start;
+  }
+  
+  .controls-panel {
+    grid-column: 1;
+    grid-row: 1;
+    order: 0;
+  }
+  
+  .preview-container {
+    grid-column: 2;
+    grid-row: 1;
+    order: 0;
   }
 }
 
