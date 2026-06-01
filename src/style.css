@@ -1093,20 +1093,48 @@ header p {
 
 /* Theme support for Luggage Tag */
 .luggage-tag[data-theme="classic"] {
+  --card-bg: #f5f4f0;
+  --accent-color: #1b2f47;
+  --accent-secondary: #d64527;
+  --card-text: #172230;
+  --card-text-muted: #647385;
+  --barcode-color: #172230;
+  --dotted-line-color: rgba(27, 47, 71, 0.18);
   background-color: #f5f4f0;
   background-image: radial-gradient(#e7e5dc 1px, transparent 1px);
   background-size: 16px 16px;
 }
 .luggage-tag[data-theme="midnight"] {
+  --card-bg: #141619;
+  --accent-color: #ffffff;
+  --accent-secondary: #f59e0b; /* Amber */
+  --card-text: #e2e8f0;
+  --card-text-muted: #64748b;
+  --barcode-color: #e2e8f0;
+  --dotted-line-color: rgba(255, 255, 255, 0.1);
   background-color: #141619;
   background-image: radial-gradient(#1f2327 1px, transparent 1px);
   background-size: 16px 16px;
 }
 .luggage-tag[data-theme="stark"] {
+  --card-bg: #ffffff;
+  --accent-color: #000000;
+  --accent-secondary: #000000;
+  --card-text: #000000;
+  --card-text-muted: #555555;
+  --barcode-color: #000000;
+  --dotted-line-color: rgba(0, 0, 0, 0.15);
   background: #ffffff;
   border: 1px solid #000000;
 }
 .luggage-tag[data-theme="forest"] {
+  --card-bg: #f2efe4;
+  --accent-color: #1f3d30;
+  --accent-secondary: #8e6239;
+  --card-text: #192d24;
+  --card-text-muted: #6b7a70;
+  --barcode-color: #1f3d30;
+  --dotted-line-color: rgba(31, 61, 48, 0.15);
   background-color: #f2efe4;
   background-image: radial-gradient(#e5e0cd 1px, transparent 1px);
   background-size: 16px 16px;
