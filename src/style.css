@@ -990,3 +990,346 @@ header p {
   color: var(--text-secondary);
   font-weight: 500;
 }
+
+/* ==========================================================================
+   TKT FEATURE EXPANSION STYLING
+   ========================================================================== */
+
+/* Preview Toggle Switch */
+.preview-toggle-bar {
+  display: inline-flex;
+  background: rgba(24, 26, 31, 0.8);
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  padding: 0.2rem;
+  margin-bottom: 1.25rem;
+  align-self: center;
+}
+
+.toggle-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.75rem;
+  padding: 0.45rem 1rem;
+  border-radius: 0.35rem;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.toggle-btn:hover {
+  color: var(--text-primary);
+}
+
+.toggle-btn.active {
+  background: var(--panel-bg);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Custom Buttons & Layout Actions */
+.btn-clipboard {
+  background: #3b82f6;
+  color: #ffffff;
+}
+
+.btn-clipboard:hover:not(:disabled) {
+  background: #60a5fa;
+}
+
+.btn-playlist-create {
+  background: #a855f7;
+  color: #ffffff;
+}
+
+.btn-playlist-create:hover:not(:disabled) {
+  background: #c084fc;
+}
+
+.playlist-success-box {
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: 0.5rem;
+  padding: 0.8rem 1rem;
+  color: #34d399;
+  font-size: 0.8rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  width: 100%;
+  font-family: var(--font-display);
+  margin-top: 0.5rem;
+}
+
+.playlist-success-box a {
+  color: #6ee7b7;
+  text-decoration: underline;
+  font-weight: 700;
+}
+
+/* --------------------------------------------------------------------------
+   LUGGAGE TAG LAYOUT (Vertical 380px x 620px)
+   -------------------------------------------------------------------------- */
+.luggage-tag {
+  background-color: var(--card-bg);
+  border-radius: 0.75rem;
+  box-shadow: var(--shadow-card);
+  color: var(--card-text);
+  font-family: var(--font-mono);
+  width: 380px;
+  height: 620px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  padding: 1.5rem;
+}
+
+/* Theme support for Luggage Tag */
+.luggage-tag[data-theme="classic"] {
+  background-color: #f5f4f0;
+  background-image: radial-gradient(#e7e5dc 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+.luggage-tag[data-theme="midnight"] {
+  background-color: #141619;
+  background-image: radial-gradient(#1f2327 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+.luggage-tag[data-theme="stark"] {
+  background: #ffffff;
+  border: 1px solid #000000;
+}
+.luggage-tag[data-theme="forest"] {
+  background-color: #f2efe4;
+  background-image: radial-gradient(#e5e0cd 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
+/* Luggage tag details strap notch */
+.luggage-tag::before {
+  content: '';
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 48px;
+  height: 12px;
+  background-color: var(--bg-color); /* Cutout to match dashboard bg */
+  border-radius: 4px;
+  z-index: 10;
+}
+
+.tag-top-spacer {
+  height: 20px;
+}
+
+.tag-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2.5px solid var(--accent-color);
+  padding-bottom: 0.6rem;
+  margin-bottom: 1.25rem;
+}
+
+.tag-title {
+  font-size: 0.85rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.tag-priority-badge {
+  font-size: 0.62rem;
+  font-weight: 800;
+  padding: 0.15rem 0.4rem;
+  background: var(--accent-secondary);
+  color: var(--card-bg);
+  border-radius: 2px;
+  letter-spacing: 0.05em;
+}
+
+.tag-dest-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 1.5rem;
+}
+
+.tag-dest-large {
+  font-size: 4.6rem;
+  font-weight: 900;
+  line-height: 0.85;
+  letter-spacing: -0.05em;
+  color: var(--accent-color);
+}
+
+.tag-origin-mini {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.tag-info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.85rem;
+  margin-bottom: 1.25rem;
+  border-bottom: 1px dashed var(--dotted-line-color);
+  padding-bottom: 1.25rem;
+}
+
+.tag-info-cell-wide {
+  grid-column: span 2;
+}
+
+.tag-cargo-manifest {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1rem;
+}
+
+.tag-cargo-title {
+  font-size: 0.62rem;
+  font-weight: 850;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent-secondary);
+  margin-bottom: 0.5rem;
+  border-bottom: 1px solid var(--dotted-line-color);
+  padding-bottom: 0.25rem;
+}
+
+.tag-cargo-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1.6;
+  color: var(--card-text);
+  font-family: var(--font-mono);
+}
+
+.tag-cargo-item span {
+  color: var(--card-text-muted);
+  font-weight: 500;
+}
+
+.tag-footer {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  border-top: 2.5px solid var(--accent-color);
+  padding-top: 1rem;
+}
+
+.tag-barcode-num {
+  font-size: 0.52rem;
+  letter-spacing: 0.1em;
+  color: var(--card-text-muted);
+}
+
+/* --------------------------------------------------------------------------
+   INTERACTIVE SONG PREVIEW & EQUALIZER STYLING
+   -------------------------------------------------------------------------- */
+.manifest-row {
+  cursor: pointer;
+  position: relative;
+  transition: padding-left 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.manifest-row:hover {
+  padding-left: 12px;
+}
+
+/* Play Indicator Overlay Icon */
+.play-row-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  color: var(--accent-secondary);
+  margin-right: 4px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  vertical-align: middle;
+}
+
+.manifest-row:hover .play-row-icon {
+  opacity: 0.8;
+}
+
+.manifest-row.playing .play-row-icon {
+  display: none;
+}
+
+.manifest-row.playing {
+  color: var(--accent-secondary) !important;
+}
+
+.manifest-row.playing span {
+  color: var(--accent-secondary) !important;
+}
+
+.manifest-row.playing strong {
+  color: var(--accent-secondary) !important;
+}
+
+/* Real-Time Animated Equalizer Bars */
+.audio-indicator {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 1.5px;
+  width: 10px;
+  height: 10px;
+  margin-left: 0.4rem;
+  vertical-align: middle;
+}
+
+.audio-bar {
+  width: 2px;
+  height: 100%;
+  background-color: var(--accent-secondary);
+  border-radius: 1px;
+  transform-origin: bottom;
+  animation: bounce-bar 0.7s ease-in-out infinite alternate;
+}
+
+.audio-bar:nth-child(2) {
+  animation-delay: 0.2s;
+  animation-duration: 0.5s;
+}
+
+.audio-bar:nth-child(3) {
+  animation-delay: 0.4s;
+  animation-duration: 0.6s;
+}
+
+@keyframes bounce-bar {
+  0% { transform: scaleY(0.25); }
+  100% { transform: scaleY(1.0); }
+}
+
+/* SVG curved route animation adjustments */
+.route-line-curved {
+  fill: none;
+  stroke: var(--dotted-line-color);
+  stroke-width: 1.5;
+  stroke-dasharray: 4,4;
+}
+
+.route-plane-along-path {
+  color: var(--accent-secondary);
+}
+

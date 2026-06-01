@@ -5,25 +5,26 @@ import {
   getAccessToken, 
   fetchUserProfile, 
   fetchTopTracks, 
-  logout 
+  logout,
+  createSpotifyPlaylist
 } from './spotify';
-import { exportElementAsImage } from './exporter';
+import { exportElementAsImage, copyElementToClipboard } from './exporter';
 
 // Default Client ID check from environment variables
 const ENV_CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID || '';
 
-// Generic placeholder tracks shown before user logs in
+// Generic placeholder tracks shown before user logs in (enriched with popularity, explicit tags, and preview audio for full feature testing)
 const MOCK_TRACKS = [
-  { name: 'TRACK NAME 01', artists: [{ name: 'ARTIST 01' }], duration_ms: 210000 },
-  { name: 'TRACK NAME 02', artists: [{ name: 'ARTIST 02' }], duration_ms: 185000 },
-  { name: 'TRACK NAME 03', artists: [{ name: 'ARTIST 03' }], duration_ms: 240000 },
-  { name: 'TRACK NAME 04', artists: [{ name: 'ARTIST 04' }], duration_ms: 195000 },
-  { name: 'TRACK NAME 05', artists: [{ name: 'ARTIST 05' }], duration_ms: 220000 },
-  { name: 'TRACK NAME 06', artists: [{ name: 'ARTIST 06' }], duration_ms: 175000 },
-  { name: 'TRACK NAME 07', artists: [{ name: 'ARTIST 07' }], duration_ms: 205000 },
-  { name: 'TRACK NAME 08', artists: [{ name: 'ARTIST 08' }], duration_ms: 230000 },
-  { name: 'TRACK NAME 09', artists: [{ name: 'ARTIST 09' }], duration_ms: 190000 },
-  { name: 'TRACK NAME 10', artists: [{ name: 'ARTIST 10' }], duration_ms: 215000 }
+  { id: 'mock-01', name: 'TRACK NAME 01', artists: [{ name: 'ARTIST 01' }], duration_ms: 210000, preview_url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', popularity: 82, explicit: false },
+  { id: 'mock-02', name: 'TRACK NAME 02', artists: [{ name: 'ARTIST 02' }], duration_ms: 185000, preview_url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3', popularity: 74, explicit: true },
+  { id: 'mock-03', name: 'TRACK NAME 03', artists: [{ name: 'ARTIST 03' }], duration_ms: 240000, preview_url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3', popularity: 68, explicit: false },
+  { id: 'mock-04', name: 'TRACK NAME 04', artists: [{ name: 'ARTIST 04' }], duration_ms: 195000, preview_url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3', popularity: 89, explicit: false },
+  { id: 'mock-05', name: 'TRACK NAME 05', artists: [{ name: 'ARTIST 05' }], duration_ms: 220000, preview_url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3', popularity: 55, explicit: false },
+  { id: 'mock-06', name: 'TRACK NAME 06', artists: [{ name: 'ARTIST 06' }], duration_ms: 175000, preview_url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3', popularity: 61, explicit: false },
+  { id: 'mock-07', name: 'TRACK NAME 07', artists: [{ name: 'ARTIST 07' }], duration_ms: 205000, preview_url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3', popularity: 79, explicit: false },
+  { id: 'mock-08', name: 'TRACK NAME 08', artists: [{ name: 'ARTIST 08' }], duration_ms: 230000, preview_url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3', popularity: 93, explicit: true },
+  { id: 'mock-09', name: 'TRACK NAME 09', artists: [{ name: 'ARTIST 09' }], duration_ms: 190000, preview_url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3', popularity: 42, explicit: false },
+  { id: 'mock-10', name: 'TRACK NAME 10', artists: [{ name: 'ARTIST 10' }], duration_ms: 215000, preview_url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3', popularity: 70, explicit: false }
 ];
 
 const MOCK_PROFILE = {
@@ -44,7 +45,12 @@ const state = {
   customSeat: '01A',
   isMockData: true,
   isLoading: false,
-  errorMessage: ''
+  errorMessage: '',
+  previewMode: 'ticket',     // 'ticket' | 'tag'
+  playlistUrl: '',
+  playlistLoading: false,
+  currentlyPlayingTrackId: null,
+  clipboardStatus: ''        // '', 'copied', 'error'
 };
 
 // SVG Icons (Plane & Other UI icons inlined to ensure html2canvas loads them natively)
@@ -78,6 +84,216 @@ function formatDuration(ms) {
   return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
+let previewAudioInstance = null;
+
+// Airport terminal chime synthesized directly via the Web Audio API
+function playAirportChime() {
+  try {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return;
+    
+    const ctx = new AudioContextClass();
+    const now = ctx.currentTime;
+    
+    const playTone = (freq, time, duration) => {
+      const osc = ctx.createOscillator();
+      const gainNode = ctx.createGain();
+      
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, time);
+      
+      gainNode.gain.setValueAtTime(0, time);
+      gainNode.gain.linearRampToValueAtTime(0.18, time + 0.04);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, time + duration);
+      
+      osc.connect(gainNode);
+      gainNode.connect(ctx.destination);
+      
+      osc.start(time);
+      osc.stop(time + duration);
+    };
+    
+    // Play classic triple tone airport chime
+    playTone(349.23, now, 0.5);        // F4
+    playTone(440.00, now + 0.22, 0.5);  // A4
+    playTone(523.25, now + 0.44, 0.7);  // C5
+  } catch (e) {
+    console.warn('Web Audio API not supported or user gesture required:', e);
+  }
+}
+
+// Calculate flight stats based on tracks (tempo, popularity, explicit, duration)
+function getCargoStats(tracks) {
+  if (!tracks || tracks.length === 0) {
+    return {
+      flightTime: '0H 35M',
+      cruisingAltitude: '32,000 FT',
+      baggageWeight: '8.0 KG',
+      passengerClass: 'TRAVEL CLASS',
+      avgPopularity: 65,
+      flightNo: 'TT26',
+      wavePeakY: 15
+    };
+  }
+  
+  const totalMs = tracks.reduce((sum, t) => sum + (t.duration_ms || 0), 0);
+  const totalSec = Math.floor(totalMs / 1000);
+  const hrs = Math.floor(totalSec / 3600);
+  const mins = Math.floor((totalSec % 3600) / 60);
+  const flightTime = `${hrs}H ${mins.toString().padStart(2, '0')}M`;
+  
+  const avgPopularity = Math.round(tracks.reduce((sum, t) => sum + (t.popularity || 0), 0) / tracks.length);
+  const altitude = 15000 + (avgPopularity * 260);
+  const cruisingAltitude = `${altitude.toLocaleString()} FT`;
+  
+  const explicitCount = tracks.filter(t => t.explicit).length;
+  const weightVal = 8.5 + (explicitCount * 2.5) + (tracks[0]?.name.length % 5);
+  const baggageWeight = `${weightVal.toFixed(1)} KG`;
+  
+  let passengerClass = 'FREQUENT FLYER';
+  if (avgPopularity > 75) {
+    passengerClass = 'FIRST CLASS';
+  } else if (avgPopularity < 45) {
+    passengerClass = 'EXPLORER CLASS';
+  } else {
+    passengerClass = 'PREMIUM CLASS';
+  }
+  
+  // Wave peak Y coordinate mapping: peak Y runs 5 (high curve) to 30 (flat curve)
+  const wavePeakY = Math.max(5, 35 - Math.round(avgPopularity * 0.3));
+  
+  let flightNo = 'TT26';
+  if (state.timeRange === 'short_term') flightNo = 'SW04';
+  else if (state.timeRange === 'medium_term') flightNo = 'MM06';
+  else if (state.timeRange === 'long_term') flightNo = 'LT99';
+  
+  return {
+    flightTime,
+    cruisingAltitude,
+    baggageWeight,
+    passengerClass,
+    avgPopularity,
+    flightNo,
+    wavePeakY
+  };
+}
+
+// Toggles audio playback for a selected track preview
+function toggleTrackPreview(trackId, previewUrl) {
+  if (!previewUrl) return;
+  
+  if (state.currentlyPlayingTrackId === trackId) {
+    if (previewAudioInstance) {
+      previewAudioInstance.pause();
+    }
+    state.currentlyPlayingTrackId = null;
+  } else {
+    if (previewAudioInstance) {
+      previewAudioInstance.pause();
+    }
+    state.currentlyPlayingTrackId = trackId;
+    previewAudioInstance = new Audio(previewUrl);
+    previewAudioInstance.volume = 0.5;
+    previewAudioInstance.addEventListener('ended', () => {
+      state.currentlyPlayingTrackId = null;
+      renderApp();
+    });
+    previewAudioInstance.play().catch(e => {
+      console.warn('Playback failed:', e);
+      state.currentlyPlayingTrackId = null;
+      renderApp();
+    });
+  }
+  renderApp();
+}
+
+// Renders the luggage tag companion HTML template
+function renderLuggageTagHTML(meta, stats, tracksList) {
+  const topTrack = tracksList[0] || { name: 'TOP TRACK', artists: [{ name: 'ARTIST' }] };
+  const firstArtist = topTrack.artists[0]?.name || 'UNKNOWN ARTIST';
+  
+  let topGenre = 'POP / ROCK';
+  if (topTrack.name.length % 3 === 0) topGenre = 'INDIE / ALTERNATIVE';
+  else if (topTrack.name.length % 3 === 1) topGenre = 'HIP-HOP / R&B';
+  
+  return `
+    <div class="luggage-tag" data-theme="${state.theme}">
+      <div class="tag-top-spacer"></div>
+      
+      <div class="tag-header">
+        <span class="tag-title">TUNETICKET BAG TAG</span>
+        <span class="tag-priority-badge">PRIORITY</span>
+      </div>
+      
+      <div class="tag-dest-row">
+        <div>
+          <span class="val" style="font-size: 0.65rem; color: var(--card-text-muted); display: block; margin-bottom: 0.1rem;">FROM</span>
+          <span class="val-large" style="font-size: 2.2rem; line-height: 1.0;">SPO</span>
+        </div>
+        <div style="font-size: 1.6rem; color: var(--accent-secondary); font-weight: 800;">➔</div>
+        <div style="text-align: right;">
+          <span class="val" style="font-size: 0.65rem; color: var(--card-text-muted); display: block; margin-bottom: 0.1rem;">TO</span>
+          <span class="tag-dest-large">${meta.destCode}</span>
+        </div>
+      </div>
+      
+      <div class="tag-info-grid">
+        <div class="tag-info-cell-wide">
+          <div class="lbl">Passenger</div>
+          <div class="val" style="font-size: 1.0rem; line-height: 1.2;">${meta.passenger}</div>
+        </div>
+        <div>
+          <div class="lbl">Seat</div>
+          <div class="val" style="color: var(--accent-secondary); font-size: 0.95rem;">${meta.seat}</div>
+        </div>
+        <div>
+          <div class="lbl">Flight</div>
+          <div class="val" style="font-size: 0.95rem;">${stats.flightNo}</div>
+        </div>
+        <div class="tag-info-cell-wide">
+          <div class="lbl">Final Destination</div>
+          <div class="val" style="font-size: 0.9rem;">${meta.destCity}</div>
+        </div>
+      </div>
+      
+      <div class="tag-cargo-manifest">
+        <div class="tag-cargo-title">Priority Cargo (Top Track)</div>
+        <div style="background: rgba(0,0,0,0.03); border-radius: 4px; padding: 0.65rem; border-left: 3px solid var(--accent-secondary); margin-bottom: 0.75rem;">
+          <div class="lbl" style="color: var(--accent-secondary); margin-bottom: 0.1rem; font-size: 0.55rem;">Priority load #01</div>
+          <div class="val" style="font-size: 0.9rem; font-weight: 900; white-space: normal; line-height: 1.1; margin-bottom: 0.15rem;">${topTrack.name}</div>
+          <div style="font-size: 0.7rem; font-weight: 600; color: var(--card-text-muted);">${firstArtist}</div>
+        </div>
+        
+        <div class="tag-cargo-title">Aviation Load Specs</div>
+        <div class="tag-cargo-item">
+          <span>Flight Duration:</span>
+          ${stats.flightTime}
+        </div>
+        <div class="tag-cargo-item">
+          <span>Cruising Altitude:</span>
+          ${stats.cruisingAltitude}
+        </div>
+        <div class="tag-cargo-item">
+          <span>Baggage Weight:</span>
+          ${stats.baggageWeight}
+        </div>
+        <div class="tag-cargo-item">
+          <span>Cabin Class:</span>
+          ${stats.passengerClass}
+        </div>
+      </div>
+      
+      <div class="tag-footer">
+        <div style="width: 100%; height: 36px; display: flex; justify-content: center; fill: var(--barcode-color);">
+          ${BARCODES.vertical}
+        </div>
+        <span class="tag-barcode-num">*BAG-${meta.pnr}-${meta.destCode}*</span>
+        <span style="font-size: 0.48rem; letter-spacing: 0.05em; font-weight: 700; color: var(--card-text-muted); margin-top: 0.1rem;">TUNETICKET AIR CARRIERS ASSOC.</span>
+      </div>
+    </div>
+  `;
+}
+
 // Resizes and scales the boarding pass to perfectly fit mobile screen widths
 function resizeCard() {
   const container = document.querySelector('.card-scroll-wrapper');
@@ -85,18 +301,22 @@ function resizeCard() {
   if (!container || !card) return;
   
   const containerWidth = container.offsetWidth;
-  const cardWidth = 780; // Fixed width of card
+  const isTag = state.previewMode === 'tag';
+  const cardWidth = isTag ? 380 : 780; // Fixed width of card
+  const cardHeight = isTag ? 620 : 440; // Fixed height of card
   
+  // Set explicit size of shadow wrapper to match preview mode
+  card.style.width = `${cardWidth}px`;
+  card.style.height = `${cardHeight}px`;
+
   if (containerWidth < cardWidth) {
     const scale = containerWidth / cardWidth;
     card.style.transform = `scale(${scale})`;
-    // Keep it vertically aligned at the top during scaling
     card.style.transformOrigin = 'center top';
-    // Shrink the height dynamically to prevent empty spaces beneath the scaled card
-    container.style.height = `${440 * scale}px`;
+    container.style.height = `${cardHeight * scale}px`;
   } else {
     card.style.transform = 'none';
-    container.style.height = '460px'; // Reset to standard height
+    container.style.height = `${cardHeight + 20}px`; // Reset to standard height + offset
   }
 }
 
@@ -203,6 +423,7 @@ function renderApp() {
 
   const meta = getTicketMetadata();
   const tracksList = state.isMockData ? MOCK_TRACKS : state.topTracks;
+  const stats = getCargoStats(tracksList);
 
   root.innerHTML = `
     <header>
@@ -226,7 +447,7 @@ function renderApp() {
       </div>
       <p>Your musical journey, printed on a premium flight ticket. Safe client-side authorization, custom themes, and full multi-language support.</p>
     </header>
-
+ 
     <main class="dashboard">
       <!-- Left side: Clean controls panel -->
       <section class="controls-panel">
@@ -298,12 +519,46 @@ function renderApp() {
           </div>
         </div>
 
-        <!-- Step 4: Export -->
+        <!-- Step 4: Export Options & Playlists -->
         <div class="panel-section">
-          <h3>4. Get Ticket</h3>
-          <button id="download-btn" class="btn btn-spotify">
-            ${ICONS.download} Save Boarding Pass
+          <h3>4. Get Ticket & Playlist</h3>
+          
+          <button id="download-btn" class="btn btn-spotify" style="margin-bottom: 0.5rem;">
+            ${ICONS.download} Save Image
           </button>
+          
+          <button id="clipboard-btn" class="btn btn-outline btn-clipboard" style="margin-bottom: 0.5rem;">
+            Copy to Clipboard
+          </button>
+          
+          ${state.isLoggedIn ? `
+            <button id="playlist-btn" class="btn btn-outline btn-playlist-create" ${state.playlistLoading ? 'disabled' : ''}>
+              ${state.playlistLoading ? '<div class="spinner" style="width:14px;height:14px;margin:0;border-width:2px;display:inline-block;vertical-align:middle;margin-right:8px;"></div> Creating...' : 'Create Spotify Playlist'}
+            </button>
+          ` : `
+            <button class="btn btn-outline" disabled title="Connect Spotify to create playlists">
+              Create Playlist (Connect Req.)
+            </button>
+          `}
+          
+          ${state.playlistUrl ? `
+            <div class="playlist-success-box">
+              <span>✈️ Playlist Created!</span>
+              <a href="${state.playlistUrl}" target="_blank" rel="noopener">Open Playlist on Spotify</a>
+            </div>
+          ` : ''}
+          
+          ${state.clipboardStatus === 'copied' ? `
+            <div class="playlist-success-box" style="background: rgba(59, 130, 246, 0.08); border-color: rgba(59, 130, 246, 0.2); color: #60a5fa;">
+              <span>📋 Copied to Clipboard!</span>
+            </div>
+          ` : ''}
+          
+          ${state.clipboardStatus === 'error' ? `
+            <div class="playlist-success-box" style="background: rgba(239, 68, 68, 0.08); border-color: rgba(239, 68, 68, 0.2); color: #f87171;">
+              <span>⚠️ Copy Failed. Try downloading instead.</span>
+            </div>
+          ` : ''}
         </div>
 
       </section>
@@ -311,6 +566,12 @@ function renderApp() {
       <!-- Right side: Realistic Visual Live Preview -->
       <section class="preview-container">
         
+        <!-- Preview Mode Toggles -->
+        <div class="preview-toggle-bar">
+          <button class="toggle-btn ${state.previewMode === 'ticket' ? 'active' : ''}" data-mode="ticket">Boarding Pass</button>
+          <button class="toggle-btn ${state.previewMode === 'tag' ? 'active' : ''}" data-mode="tag">Luggage Tag</button>
+        </div>
+
         <!-- Error notification if any -->
         ${state.errorMessage ? `
           <div class="error-container">
@@ -327,166 +588,200 @@ function renderApp() {
         ` : `
           <div class="card-scroll-wrapper">
             <div class="card-wrapper-shadow">
-              <!-- The Boarding Pass component (Split: main ticket + passenger stub) -->
-              <div class="boarding-pass" data-theme="${state.theme}">
-                
-                <!-- 1. LEFT SIDE: MAIN TICKET -->
-                <div class="pass-main">
+              ${state.previewMode === 'ticket' ? `
+                <!-- The Boarding Pass component (Split: main ticket + passenger stub) -->
+                <div class="boarding-pass" data-theme="${state.theme}">
                   
-                  <div class="header-row">
-                    <div class="airline-info">
-                      ${ICONS.plane}
-                      <span class="airline-name">TUNETICKET AIRWAYS</span>
-                    </div>
-                    <span class="flight-class-badge">${meta.classText}</span>
-                  </div>
-
-                  <div class="route-row">
-                    <div class="airport-info">
-                      <span class="val-large">SPO</span>
-                      <span class="airport-city">Spotify Hub</span>
-                    </div>
+                  <!-- 1. LEFT SIDE: MAIN TICKET -->
+                  <div class="pass-main">
                     
-                    <div class="route-connector">
-                      <div class="route-line-wrapper">
-                        <span class="route-line"></span>
-                        <span class="route-plane">${ICONS.plane}</span>
+                    <div class="header-row">
+                      <div class="airline-info">
+                        ${ICONS.plane}
+                        <span class="airline-name">TUNETICKET AIRWAYS</span>
                       </div>
-                      <span class="flight-duration-lbl">FLIGHT TT26</span>
+                      <span class="flight-class-badge">${meta.classText}</span>
                     </div>
 
-                    <div class="airport-info" style="text-align: right;">
-                       <span class="val-large">${meta.destCode}</span>
-                       <span class="airport-city">${meta.destCity}</span>
-                     </div>
-                  </div>
-
-                  <!-- Flight Detail Grid -->
-                  <div class="data-matrix">
-                    <div class="data-cell passenger-name">
-                      <div class="lbl">Passenger Name</div>
-                      <div class="val">${meta.passenger}</div>
-                    </div>
-                    <div class="data-cell">
-                      <div class="lbl">Seat</div>
-                      <div class="val" style="color: var(--accent-secondary);">${meta.seat}</div>
-                    </div>
-                    <div class="data-cell">
-                      <div class="lbl">Date</div>
-                      <div class="val">${meta.dateText}</div>
-                    </div>
-                    <div class="data-cell">
-                      <div class="lbl">Gate</div>
-                      <div class="val">${meta.gate}</div>
-                    </div>
-                    <div class="data-cell">
-                      <div class="lbl">Boarding</div>
-                      <div class="val" style="color: var(--accent-secondary);">12:00</div>
-                    </div>
-                    <div class="data-cell">
-                      <div class="lbl">Zone</div>
-                      <div class="val">ZONE 2</div>
-                    </div>
-                    <div class="data-cell">
-                      <div class="lbl">Sequence</div>
-                      <div class="val">001</div>
-                    </div>
-                  </div>
-
-                  <!-- Left manifest: Top Tracks 01-05 -->
-                  <div class="manifest-table">
-                    <div class="manifest-title">Stopover Manifest / Flight Itinerary</div>
-                    <div class="manifest-list">
-                      ${tracksList.slice(0, 5).map((track, i) => `
-                        <div class="manifest-row">
-                          <span class="manifest-col-seq">${(i + 1).toString().padStart(2, '0')}</span>
-                          <div class="manifest-col-desc">
-                            <strong>${track.name}</strong> <span>- ${track.artists.map(a => a.name).join(', ')}</span>
-                          </div>
-                          <span class="manifest-col-dur">${formatDuration(track.duration_ms)}</span>
-                        </div>
-                      `).join('')}
-                    </div>
-                  </div>
-
-                  <!-- Bottom main footer barcode -->
-                  <div class="pass-main-footer">
-                    <div class="barcode-horizontal-box">
-                      ${BARCODES.horizontal}
-                      <span class="barcode-horizontal-num">${meta.barcodeMainVal}</span>
-                    </div>
-                    <span class="sec-pnr">PNR: ${meta.pnr}</span>
-                  </div>
-
-                </div>
-
-                <!-- 2. RIGHT SIDE: PASSENGER STUB -->
-                <div class="pass-stub">
-                  
-                  <div class="stub-header">
-                    <span>PASSENGER STUB</span>
-                    ${ICONS.plane}
-                  </div>
-
-                  <div class="stub-route">
-                    <div>
-                      <div class="val-large" style="font-size: 1.6rem; line-height:1;">SPO</div>
-                      <div class="lbl" style="font-size:0.5rem;">Spotify Hub</div>
-                    </div>
-                    <span class="lbl" style="font-size:0.8rem; margin:0 0.25rem;">&gt;</span>
-                    <div style="text-align: right;">
-                      <div class="val-large" style="font-size: 1.6rem; line-height:1;">${meta.destCode}</div>
-                      <div class="lbl" style="font-size:0.5rem;">${meta.destCity}</div>
-                    </div>
-                  </div>
-
-                  <div class="stub-grid" style="margin-bottom: 0.5rem;">
-                    <div class="cell-wide">
-                      <div class="lbl">Passenger</div>
-                      <div class="val" style="font-size: 0.72rem;">${meta.passenger}</div>
-                    </div>
-                    <div>
-                      <div class="lbl">Seat</div>
-                      <div class="val" style="font-size: 0.72rem; color: var(--accent-secondary);">${meta.seat}</div>
-                    </div>
-                    <div>
-                      <div class="lbl">Gate</div>
-                      <div class="val" style="font-size: 0.72rem;">${meta.gate}</div>
-                    </div>
-                    <div>
-                      <div class="lbl">Flight</div>
-                      <div class="val" style="font-size: 0.72rem;">SW26</div>
-                    </div>
-                    <div>
-                      <div class="lbl">Seq</div>
-                      <div class="val" style="font-size: 0.72rem;">001</div>
-                    </div>
-                  </div>
-
-                  <!-- Right manifest: Connection Tracks 06-10 -->
-                  <div class="stub-manifest-table" style="margin-top: 0.4rem; margin-bottom: auto; border-top: 1px solid var(--dotted-line-color); padding-top: 0.4rem; overflow: hidden;">
-                    <div class="lbl" style="font-size: 0.55rem; font-weight: 850; color: var(--accent-secondary); margin-bottom: 0.3rem;">Connection Stops 06-10</div>
-                    <div class="manifest-list" style="gap: 0.3rem;">
-                      ${tracksList.slice(5, 10).map((track, i) => `
-                        <div class="manifest-row" style="font-size: 0.65rem; height: 16px; display: flex; justify-content: space-between; font-weight: 700; align-items: center; overflow: hidden; line-height: 1;">
-                          <span style="color: var(--accent-secondary); width: 14px; font-weight: 800;">${(i + 6).toString().padStart(2, '0')}</span>
-                          <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 0.25rem; text-align: left;">
-                            <strong>${track.name}</strong> <span style="font-weight:500; color: var(--card-text-muted);">- ${track.artists[0].name}</span>
+                    <div class="route-row">
+                      <div class="airport-info">
+                        <span class="val-large">SPO</span>
+                        <span class="airport-city">Spotify Hub</span>
+                      </div>
+                      
+                      <div class="route-connector" style="width: 100%; height: 35px; justify-content: center; position: relative;">
+                        <div class="route-line-wrapper" style="width: 100%; height: 35px; position: relative;">
+                          <svg viewBox="0 0 100 40" preserveAspectRatio="none" style="width: 100%; height: 100%; position: absolute; top: 0; left: 0; overflow: visible;">
+                            <path class="route-line-curved" d="M 0,35 Q 50,${stats.wavePeakY} 100,35" />
+                          </svg>
+                          <span class="route-plane" style="position: absolute; left: 50%; top: calc(${stats.wavePeakY}px - 6px); transform: translate(-50%, -50%); background-color: var(--card-bg); padding: 0 0.4rem; z-index: 2; height: 16px;">
+                            <span style="display: flex; align-items: center; justify-content: center; transform: rotate(90deg); color: var(--accent-secondary);">
+                              ${ICONS.plane}
+                            </span>
                           </span>
-                          <span style="font-family: var(--font-mono); color: var(--card-text-muted); font-size: 0.6rem;">${formatDuration(track.duration_ms)}</span>
                         </div>
-                      `).join('')}
+                        <span class="flight-duration-lbl" style="margin-top: 0.15rem; font-size: 0.55rem; z-index: 10;">FLIGHT ${stats.flightNo}</span>
+                      </div>
+
+                      <div class="airport-info" style="text-align: right;">
+                         <span class="val-large">${meta.destCode}</span>
+                         <span class="airport-city">${meta.destCity}</span>
+                       </div>
                     </div>
+
+                    <!-- Flight Detail Grid -->
+                    <div class="data-matrix">
+                      <div class="data-cell passenger-name">
+                        <div class="lbl">Passenger Name</div>
+                        <div class="val">${meta.passenger}</div>
+                      </div>
+                      <div class="data-cell">
+                        <div class="lbl">Seat</div>
+                        <div class="val" style="color: var(--accent-secondary);">${meta.seat}</div>
+                      </div>
+                      <div class="data-cell">
+                        <div class="lbl">Duration</div>
+                        <div class="val">${stats.flightTime}</div>
+                      </div>
+                      <div class="data-cell">
+                        <div class="lbl">Gate</div>
+                        <div class="val">${meta.gate}</div>
+                      </div>
+                      <div class="data-cell">
+                        <div class="lbl">Altitude</div>
+                        <div class="val" style="color: var(--accent-secondary);">${stats.cruisingAltitude}</div>
+                      </div>
+                      <div class="data-cell">
+                        <div class="lbl">Baggage</div>
+                        <div class="val">${stats.baggageWeight}</div>
+                      </div>
+                      <div class="data-cell">
+                        <div class="lbl">Class</div>
+                        <div class="val" style="font-size: 0.72rem; white-space: nowrap;">${stats.passengerClass}</div>
+                      </div>
+                    </div>
+
+                    <!-- Left manifest: Top Tracks 01-05 -->
+                    <div class="manifest-table">
+                      <div class="manifest-title">Stopover Manifest / Flight Itinerary</div>
+                      <div class="manifest-list">
+                        ${tracksList.slice(0, 5).map((track, i) => {
+                          const hasPreview = !!track.preview_url;
+                          const isPlaying = state.currentlyPlayingTrackId === track.id;
+                          return `
+                            <div class="manifest-row ${isPlaying ? 'playing' : ''} ${hasPreview ? 'has-preview' : ''}" data-track-id="${track.id || `mock-${i}`}" data-preview-url="${track.preview_url || ''}">
+                              <span class="manifest-col-seq">
+                                ${isPlaying ? `
+                                  <span class="audio-indicator">
+                                    <span class="audio-bar"></span>
+                                    <span class="audio-bar"></span>
+                                    <span class="audio-bar"></span>
+                                  </span>
+                                ` : (i + 1).toString().padStart(2, '0')}
+                              </span>
+                              <div class="manifest-col-desc">
+                                ${hasPreview ? `<span class="play-row-icon">▶</span>` : ''}
+                                <strong>${track.name}</strong> <span>- ${track.artists.map(a => a.name).join(', ')}</span>
+                              </div>
+                              <span class="manifest-col-dur">${formatDuration(track.duration_ms)}</span>
+                            </div>
+                          `;
+                        }).join('')}
+                      </div>
+                    </div>
+
+                    <!-- Bottom main footer barcode -->
+                    <div class="pass-main-footer">
+                      <div class="barcode-horizontal-box">
+                        ${BARCODES.horizontal}
+                        <span class="barcode-horizontal-num">${meta.barcodeMainVal}</span>
+                      </div>
+                      <span class="sec-pnr">PNR: ${meta.pnr}</span>
+                    </div>
+
                   </div>
 
-                  <div class="barcode-vertical-box">
-                    ${BARCODES.vertical}
-                    <span class="barcode-vertical-num">*PNR-${meta.pnr}*</span>
+                  <!-- 2. RIGHT SIDE: PASSENGER STUB -->
+                  <div class="pass-stub">
+                    
+                    <div class="stub-header">
+                      <span>PASSENGER STUB</span>
+                      ${ICONS.plane}
+                    </div>
+
+                    <div class="stub-route">
+                      <div>
+                        <div class="val-large" style="font-size: 1.6rem; line-height:1;">SPO</div>
+                        <div class="lbl" style="font-size:0.5rem;">Spotify Hub</div>
+                      </div>
+                      <span class="lbl" style="font-size:0.8rem; margin:0 0.25rem;">&gt;</span>
+                      <div style="text-align: right;">
+                        <div class="val-large" style="font-size: 1.6rem; line-height:1;">${meta.destCode}</div>
+                        <div class="lbl" style="font-size:0.5rem;">${meta.destCity}</div>
+                      </div>
+                    </div>
+
+                    <div class="stub-grid" style="margin-bottom: 0.5rem;">
+                      <div class="cell-wide">
+                        <div class="lbl">Passenger</div>
+                        <div class="val" style="font-size: 0.72rem;">${meta.passenger}</div>
+                      </div>
+                      <div>
+                        <div class="lbl">Seat</div>
+                        <div class="val" style="font-size: 0.72rem; color: var(--accent-secondary);">${meta.seat}</div>
+                      </div>
+                      <div>
+                        <div class="lbl">Flight</div>
+                        <div class="val" style="font-size: 0.72rem;">${stats.flightNo}</div>
+                      </div>
+                      <div>
+                        <div class="lbl">Duration</div>
+                        <div class="val" style="font-size: 0.72rem;">${stats.flightTime}</div>
+                      </div>
+                      <div>
+                        <div class="lbl">Altitude</div>
+                        <div class="val" style="font-size: 0.65rem; white-space: nowrap;">${stats.cruisingAltitude}</div>
+                      </div>
+                    </div>
+
+                    <!-- Right manifest: Connection Tracks 06-10 -->
+                    <div class="stub-manifest-table" style="margin-top: 0.4rem; margin-bottom: auto; border-top: 1px solid var(--dotted-line-color); padding-top: 0.4rem; overflow: hidden;">
+                      <div class="lbl" style="font-size: 0.55rem; font-weight: 850; color: var(--accent-secondary); margin-bottom: 0.3rem;">Connection Stops 06-10</div>
+                      <div class="manifest-list" style="gap: 0.3rem;">
+                        ${tracksList.slice(5, 10).map((track, i) => {
+                          const hasPreview = !!track.preview_url;
+                          const isPlaying = state.currentlyPlayingTrackId === track.id;
+                          return `
+                            <div class="manifest-row ${isPlaying ? 'playing' : ''} ${hasPreview ? 'has-preview' : ''}" style="font-size: 0.65rem; height: 16px; display: flex; justify-content: space-between; font-weight: 700; align-items: center; overflow: hidden; line-height: 1;" data-track-id="${track.id || `mock-${i+5}`}" data-preview-url="${track.preview_url || ''}">
+                              <span style="color: var(--accent-secondary); width: 14px; font-weight: 800; display: flex; align-items: center;">
+                                ${isPlaying ? `
+                                  <span class="audio-indicator" style="margin-left: 0; width: 8px; height: 8px;">
+                                    <span class="audio-bar" style="width: 1.5px;"></span>
+                                    <span class="audio-bar" style="width: 1.5px;"></span>
+                                    <span class="audio-bar" style="width: 1.5px;"></span>
+                                  </span>
+                                ` : (i + 6).toString().padStart(2, '0')}
+                              </span>
+                              <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 0.25rem; text-align: left; display: flex; align-items: center;">
+                                ${hasPreview ? `<span class="play-row-icon" style="font-size: 0.5rem; margin-right: 2px;">▶</span>` : ''}
+                                <strong>${track.name}</strong> <span style="font-weight:500; color: var(--card-text-muted);">- ${track.artists[0].name}</span>
+                              </span>
+                              <span style="font-family: var(--font-mono); color: var(--card-text-muted); font-size: 0.6rem;">${formatDuration(track.duration_ms)}</span>
+                            </div>
+                          `;
+                        }).join('')}
+                      </div>
+                    </div>
+
+                    <div class="barcode-vertical-box">
+                      ${BARCODES.vertical}
+                      <span class="barcode-vertical-num">*PNR-${meta.pnr}*</span>
+                    </div>
+
                   </div>
 
                 </div>
-
-              </div>
+              ` : renderLuggageTagHTML(meta, stats, tracksList)}
             </div>
           </div>
         `}
@@ -560,6 +855,11 @@ function bindEvents() {
       state.topTracks = [];
       state.isMockData = true;
       state.errorMessage = '';
+      state.playlistUrl = '';
+      state.currentlyPlayingTrackId = null;
+      if (previewAudioInstance) {
+        previewAudioInstance.pause();
+      }
       renderApp();
     });
   }
@@ -571,10 +871,16 @@ function bindEvents() {
       if (range === state.timeRange) return;
       
       state.timeRange = range;
+      state.playlistUrl = ''; // Reset playlist creation URL feedback when time range changes
       
       if (range === 'short_term') state.customSeat = '22A';
       else if (range === 'medium_term') state.customSeat = '01A';
       else if (range === 'long_term') state.customSeat = '07F';
+
+      if (previewAudioInstance) {
+        previewAudioInstance.pause();
+        state.currentlyPlayingTrackId = null;
+      }
 
       if (!state.isMockData && state.token) {
         state.isLoading = true;
@@ -597,16 +903,7 @@ function bindEvents() {
   if (passNameField) {
     passNameField.addEventListener('input', (e) => {
       state.customPassengerName = e.target.value.toUpperCase();
-      
-      // Update values in real-time across both the main ticket and passenger stub
-      const mainNameDisplay = document.querySelector('.pass-main .passenger-name .val');
-      const stubNameDisplay = document.querySelector('.pass-stub .val');
-      
-      const fallback = state.isMockData ? MOCK_PROFILE.display_name : (state.userProfile?.display_name || 'TRAVELER');
-      const targetText = state.customPassengerName || fallback;
-      
-      if (mainNameDisplay) mainNameDisplay.textContent = targetText;
-      if (stubNameDisplay) stubNameDisplay.textContent = targetText;
+      renderApp(); // Rerender to ensure name flows perfectly in all layouts (boarding pass main, stub, and luggage tag)
     });
   }
 
@@ -614,14 +911,7 @@ function bindEvents() {
   if (seatField) {
     seatField.addEventListener('input', (e) => {
       state.customSeat = e.target.value.toUpperCase();
-      
-      // Update seat values in real-time on both main ticket and stub
-      const mainSeatDisplay = document.querySelector('.pass-main .val[style*="accent-secondary"]');
-      const stubSeatDisplay = document.querySelector('.pass-stub .val[style*="accent-secondary"]');
-      
-      const targetText = state.customSeat || '01A';
-      if (mainSeatDisplay) mainSeatDisplay.textContent = targetText;
-      if (stubSeatDisplay) stubSeatDisplay.textContent = targetText;
+      renderApp(); // Rerender to propagate seat numbers
     });
   }
 
@@ -638,32 +928,138 @@ function bindEvents() {
       if (passCard) {
         passCard.setAttribute('data-theme', themeName);
       }
+      const tagCard = document.querySelector('.luggage-tag');
+      if (tagCard) {
+        tagCard.setAttribute('data-theme', themeName);
+      }
+    });
+  });
+
+  // Toggling Preview modes
+  const modeBtns = document.querySelectorAll('.toggle-btn');
+  modeBtns.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const mode = e.currentTarget.getAttribute('data-mode');
+      if (mode === state.previewMode) return;
+      state.previewMode = mode;
+      renderApp();
+    });
+  });
+
+  // Track row clicks to play previews
+  const trackRows = document.querySelectorAll('.manifest-row');
+  trackRows.forEach(row => {
+    row.addEventListener('click', () => {
+      const trackId = row.getAttribute('data-track-id');
+      const previewUrl = row.getAttribute('data-preview-url');
+      if (previewUrl) {
+        toggleTrackPreview(trackId, previewUrl);
+      }
     });
   });
 
   const downloadBtn = document.getElementById('download-btn');
   if (downloadBtn) {
     downloadBtn.addEventListener('click', async () => {
-      const passCard = document.querySelector('.boarding-pass');
-      if (!passCard) return;
+      const targetCard = state.previewMode === 'ticket' 
+        ? document.querySelector('.boarding-pass') 
+        : document.querySelector('.luggage-tag');
+      if (!targetCard) return;
 
       const oldBtnText = downloadBtn.innerHTML;
       downloadBtn.disabled = true;
       downloadBtn.innerHTML = '<div class="spinner" style="width:14px;height:14px;margin:0;border-width:2px;display:inline-block;vertical-align:middle;margin-right:8px;"></div> Saving...';
       
       try {
+        playAirportChime(); // Play synthesized airport chime
         const cleanName = (state.customPassengerName || (state.isMockData ? MOCK_PROFILE.display_name : state.userProfile?.display_name) || 'boardingpass')
           .trim()
           .toLowerCase()
           .replace(/\s+/g, '-');
         
-        await exportElementAsImage(passCard, `tuneticket-boarding-pass-${cleanName}.png`);
+        await exportElementAsImage(targetCard, `tuneticket-${state.previewMode}-${cleanName}.png`);
         state.errorMessage = '';
       } catch (err) {
         state.errorMessage = err.message;
       } finally {
         downloadBtn.disabled = false;
         downloadBtn.innerHTML = oldBtnText;
+        renderApp();
+      }
+    });
+  }
+
+  // Copy to Clipboard Action
+  const clipboardBtn = document.getElementById('clipboard-btn');
+  if (clipboardBtn) {
+    clipboardBtn.addEventListener('click', async () => {
+      const targetCard = state.previewMode === 'ticket' 
+        ? document.querySelector('.boarding-pass') 
+        : document.querySelector('.luggage-tag');
+      if (!targetCard) return;
+
+      clipboardBtn.disabled = true;
+      state.clipboardStatus = 'copying';
+      renderApp();
+      
+      try {
+        playAirportChime(); // Play chime!
+        await copyElementToClipboard(targetCard);
+        state.clipboardStatus = 'copied';
+        
+        setTimeout(() => {
+          if (state.clipboardStatus === 'copied') {
+            state.clipboardStatus = '';
+            renderApp();
+          }
+        }, 4000);
+      } catch (err) {
+        state.clipboardStatus = 'error';
+        setTimeout(() => {
+          if (state.clipboardStatus === 'error') {
+            state.clipboardStatus = '';
+            renderApp();
+          }
+        }, 4000);
+      } finally {
+        clipboardBtn.disabled = false;
+        renderApp();
+      }
+    });
+  }
+
+  // Create Spotify Playlist Action
+  const playlistBtn = document.getElementById('playlist-btn');
+  if (playlistBtn) {
+    playlistBtn.addEventListener('click', async () => {
+      if (!state.isLoggedIn || !state.token) return;
+      
+      state.playlistLoading = true;
+      state.playlistUrl = '';
+      renderApp();
+      
+      try {
+        playAirportChime(); // Play chime!
+        const tracksList = state.topTracks;
+        const trackUris = tracksList.map(t => t.uri).filter(Boolean);
+        
+        let rangeText = 'Medium Term (6 Months)';
+        if (state.timeRange === 'short_term') rangeText = 'Short Term (4 Weeks)';
+        else if (state.timeRange === 'long_term') rangeText = 'Long Term (All-Time)';
+        
+        const playlist = await createSpotifyPlaylist(
+          state.token,
+          state.userProfile.id,
+          trackUris,
+          rangeText
+        );
+        
+        state.playlistUrl = playlist.external_urls?.spotify || '';
+        state.errorMessage = '';
+      } catch (err) {
+        state.errorMessage = 'Playlist generation failed: ' + err.message;
+      } finally {
+        state.playlistLoading = false;
         renderApp();
       }
     });

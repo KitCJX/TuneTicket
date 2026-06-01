@@ -47,3 +47,59 @@ export async function exportElementAsImage(element, filename = 'tuneticket-board
     throw new Error('Failed to generate image. Please try again.');
   }
 }
+
+/**
+ * Copies a DOM element to the system clipboard as a PNG image
+ * @param {HTMLElement} element The element to capture and copy
+ * @returns {Promise<boolean>} Resolves to true if copy succeeded
+ */
+export async function copyElementToClipboard(element) {
+  try {
+    // 1. Ensure all custom fonts are loaded before capturing
+    if (document.fonts && document.fonts.ready) {
+      await document.fonts.ready;
+    }
+    
+    // Give a tiny buffer for layout adjustments
+    await new Promise(resolve => setTimeout(resolve, 200));
+
+    // 2. Capture using html2canvas with optimal settings
+    const canvas = await html2canvas(element, {
+      scale: 3,                // Multiplies size for high-DPI crisp export
+      useCORS: true,           // Critical for loading Spotify CDN elements
+      allowTaint: false,
+      backgroundColor: null,   // Keep background transparent
+      logging: false,
+      onclone: (clonedDoc) => {
+        // Ensure any active transformations or shadows are removed for clipboard clean render
+        const clonedCard = clonedDoc.querySelector('.boarding-pass') || clonedDoc.querySelector('.luggage-tag');
+        if (clonedCard) {
+          clonedCard.style.transform = 'none';
+          clonedCard.style.boxShadow = 'none';
+        }
+      }
+    });
+
+    // 3. Convert canvas to blob and write to clipboard
+    return new Promise((resolve, reject) => {
+      canvas.toBlob(async (blob) => {
+        if (!blob) {
+          reject(new Error('Failed to generate image blob.'));
+          return;
+        }
+        try {
+          await navigator.clipboard.write([
+            new ClipboardItem({ 'image/png': blob })
+          ]);
+          resolve(true);
+        } catch (err) {
+          console.error('Clipboard write error:', err);
+          reject(new Error('Writing image to clipboard blocked by browser security or not supported.'));
+        }
+      }, 'image/png');
+    });
+  } catch (error) {
+    console.error('Error copying image to clipboard:', error);
+    throw error;
+  }
+}

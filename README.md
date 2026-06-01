@@ -9,17 +9,17 @@ Your musical journey, printed on a premium flight boarding pass.
 ## ✨ Features
 
 - **Dynamic Destination Easter Egg:** The flight destination airport code and city automatically adjust to match your country code (detected via Spotify profile or browser locale—e.g., `SPO` ➔ `TH` for Thailand).
-- **Interactive Ticket Configuration:**
-  - Customize passenger name overlays.
-  - Select seat codes.
-  - Modify flight durations (listening periods).
+- **Interactive Ticket & Luggage Tag Toggles:** Toggle between a horizontal **Boarding Pass** or a vertical 9:16 **Luggage Tag** optimal for sharing on mobile/social media stories.
+- **Calculated Cargo Manifest Stats:** Flight statistics calculated from listening history metadata (cruising altitude derived from track popularity, flight duration from track lengths, and baggage load from explicit track counts).
+- **Dynamic Waveform Flight Path:** A custom curved SVG quadratic path mapping the altitude/path of the flight based on track popularity.
+- **Airline Sound Effects & Previews:** Hover or click tracks to play a 30-second preview audio clip (featuring animated visual equalizer waves), accompanied by synthesized airport chimes played via the Web Audio API on actions.
+- **Spotify Playlist Creator:** Connect to Spotify and instantly compile your top tracks into a public Spotify playlist directly from the ticket controls.
+- **High-DPI Capture & Clipboard Copies:** Save high-resolution transparent-notched PNG exports to your system, or copy them directly to your clipboard for instant sharing.
 - **Four Premium Visual Themes:**
   - ✈️ **Classic:** Clean off-white ticket paper with airline navy and safety orange branding.
   - 🌌 **Midnight:** Matte charcoal card face with amber guidance styling.
   - 📰 **Stark:** High-contrast retro editorial black-and-white print.
   - 🌲 **Forest:** Charter flight cream-beige paper with forest-green text and warm details.
-- **Vibrant Cyber-Terminal UI:** Frosted glassmorphism control board inspired by modern airport control centers.
-- **High-DPI Capture Export:** Generates high-definition, transparent-notched PNGs optimal for sharing on Instagram, Twitter, and TikTok.
 - **Security First:** Utilizes Spotify OAuth PKCE flow entirely client-side. No user secrets are stored or sent to external servers.
 
 ---
