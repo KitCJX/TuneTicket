@@ -301,7 +301,7 @@ function renderApp() {
         <!-- Step 4: Export -->
         <div class="panel-section">
           <h3>4. Get Ticket</h3>
-          <button id="download-btn" class="btn btn-success">
+          <button id="download-btn" class="btn btn-spotify">
             ${ICONS.download} Save Boarding Pass
           </button>
         </div>
