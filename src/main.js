@@ -12,22 +12,22 @@ import { exportElementAsImage } from './exporter';
 // Default Client ID check from environment variables
 const ENV_CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID || '';
 
-// Mock tracks showing Unicode text for multi-language verification
+// Generic placeholder tracks shown before user logs in
 const MOCK_TRACKS = [
-  { name: 'โต๊ะริม (Melt)', artists: [{ name: 'NONT TANONT' }], duration_ms: 225000 },
-  { name: 'NIGHT DANCER', artists: [{ name: 'imase' }], duration_ms: 210000 },
-  { name: 'Ditto', artists: [{ name: 'NewJeans' }], duration_ms: 186000 },
-  { name: 'สลักจิต', artists: [{ name: 'Cocktail ft. Pop Pongkool' }], duration_ms: 262000 },
-  { name: 'Blinding Lights', artists: [{ name: 'The Weeknd' }], duration_ms: 200000 },
-  { name: 'Cruel Summer', artists: [{ name: 'Taylor Swift' }], duration_ms: 178000 },
-  { name: 'พิง (Cling)', artists: [{ name: 'NONT TANONT' }], duration_ms: 195000 },
-  { name: 'As It Was', artists: [{ name: 'Harry Styles' }], duration_ms: 167000 },
-  { name: 'KICK BACK', artists: [{ name: 'Kenshi Yonezu' }], duration_ms: 193000 },
-  { name: 'Shape of You', artists: [{ name: 'Ed Sheeran' }], duration_ms: 233000 }
+  { name: 'TRACK NAME 01', artists: [{ name: 'ARTIST 01' }], duration_ms: 210000 },
+  { name: 'TRACK NAME 02', artists: [{ name: 'ARTIST 02' }], duration_ms: 185000 },
+  { name: 'TRACK NAME 03', artists: [{ name: 'ARTIST 03' }], duration_ms: 240000 },
+  { name: 'TRACK NAME 04', artists: [{ name: 'ARTIST 04' }], duration_ms: 195000 },
+  { name: 'TRACK NAME 05', artists: [{ name: 'ARTIST 05' }], duration_ms: 220000 },
+  { name: 'TRACK NAME 06', artists: [{ name: 'ARTIST 06' }], duration_ms: 175000 },
+  { name: 'TRACK NAME 07', artists: [{ name: 'ARTIST 07' }], duration_ms: 205000 },
+  { name: 'TRACK NAME 08', artists: [{ name: 'ARTIST 08' }], duration_ms: 230000 },
+  { name: 'TRACK NAME 09', artists: [{ name: 'ARTIST 09' }], duration_ms: 190000 },
+  { name: 'TRACK NAME 10', artists: [{ name: 'ARTIST 10' }], duration_ms: 215000 }
 ];
 
 const MOCK_PROFILE = {
-  display_name: 'SMITH / JOHN MR',
+  display_name: 'TRAVELER / CHRIS MR',
   images: [{ url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80' }]
 };
 
