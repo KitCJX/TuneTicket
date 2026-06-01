@@ -324,6 +324,11 @@ function resizeCard() {
   card.style.width = `${cardWidth}px`;
   card.style.height = `${cardHeight}px`;
 
+  // Apply absolute positioning dynamically to prevent layout bloat on parent containers
+  card.style.position = 'absolute';
+  card.style.left = '50%';
+  card.style.marginLeft = `-${cardWidth / 2}px`;
+
   if (containerWidth < cardWidth) {
     const scale = containerWidth / cardWidth;
     card.style.transform = `scale(${scale})`;

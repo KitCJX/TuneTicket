@@ -155,12 +155,23 @@ header p {
   grid-template-columns: 1fr;
   gap: 2.5rem;
   width: 100%;
+  min-width: 0;
 }
 
 @media (min-width: 1024px) {
   .dashboard {
     grid-template-columns: 360px 1fr;
     align-items: start;
+  }
+  
+  .controls-panel {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  
+  .preview-container {
+    grid-column: 2;
+    grid-row: 1;
   }
 }
 
@@ -176,6 +187,9 @@ header p {
   flex-direction: column;
   gap: 1.75rem;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.05);
+  width: 100%;
+  min-width: 0;
+  grid-row: 2; /* Render below preview on mobile */
 }
 
 .panel-section {
@@ -465,6 +479,9 @@ header p {
   align-items: center;
   gap: 1.5rem;
   width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  grid-row: 1; /* Render at the top on mobile */
 }
 
 /* Scroll wrapper: hides overflow and transitions height during resize scaling */
@@ -476,6 +493,7 @@ header p {
   justify-content: center;
   align-items: flex-start;
   transition: height 0.15s ease-out;
+  position: relative; /* Setup relative bounding container for absolute card positioning */
 }
 
 .card-wrapper-shadow {
@@ -1359,5 +1377,32 @@ header p {
 
 .route-plane-along-path {
   color: var(--accent-secondary);
+}
+
+/* Mobile Screen Layout Optimization Tweaks */
+@media (max-width: 480px) {
+  #app {
+    padding: 1.5rem 1rem;
+  }
+  
+  .controls-panel {
+    padding: 1.25rem;
+    gap: 1.25rem;
+  }
+  
+  .tab-btn {
+    font-size: 0.72rem;
+    padding: 0.5rem 0.2rem;
+  }
+  
+  .btn-spotify {
+    font-size: 0.85rem;
+    padding: 0.75rem 1rem;
+  }
+  
+  .theme-btn {
+    font-size: 0.75rem;
+    padding: 0.65rem 0.5rem;
+  }
 }
 
