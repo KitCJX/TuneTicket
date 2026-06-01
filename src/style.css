@@ -967,3 +967,26 @@ header p {
   width: 16px;
   height: 16px;
 }
+
+/* Subtle page footer and credit details */
+.app-footer {
+  margin-top: auto;
+  padding: 3rem 1.5rem 1rem;
+  text-align: center;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.03);
+  width: 100%;
+}
+
+.app-footer p {
+  margin: 0;
+}
+
+.credit-author {
+  color: var(--text-secondary);
+  font-weight: 500;
+}

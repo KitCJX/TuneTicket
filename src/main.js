@@ -403,7 +403,6 @@ function renderApp() {
                           <div class="manifest-col-desc">
                             <strong>${track.name}</strong> <span>- ${track.artists.map(a => a.name).join(', ')}</span>
                           </div>
-                          <span class="manifest-col-carrier">SPOTIFY</span>
                           <span class="manifest-col-dur">${formatDuration(track.duration_ms)}</span>
                         </div>
                       `).join('')}
@@ -509,6 +508,11 @@ function renderApp() {
         </ol>
       </section>
     ` : ''}
+
+    <footer class="app-footer">
+      <p>This website is not affiliated with, sponsored by, or endorsed by Spotify AB. Spotify is a trademark of Spotify AB.</p>
+      <p>© 2026 TuneTicket. Developed by <span class="credit-author">CJX1001</span>.</p>
+    </footer>
   `;
 
   bindEvents();
