@@ -49,57 +49,81 @@ export async function exportElementAsImage(element, filename = 'tuneticket-board
 }
 
 /**
- * Copies a DOM element to the system clipboard as a PNG image
+ * Copies a DOM element to the system clipboard as a PNG image.
+ * Solves browser security blocks (especially Safari) by passing a Promise
+ * directly to the ClipboardItem constructor to preserve the user gesture context.
  * @param {HTMLElement} element The element to capture and copy
  * @returns {Promise<boolean>} Resolves to true if copy succeeded
  */
 export async function copyElementToClipboard(element) {
-  try {
-    // 1. Ensure all custom fonts are loaded before capturing
-    if (document.fonts && document.fonts.ready) {
-      await document.fonts.ready;
-    }
-    
-    // Give a tiny buffer for layout adjustments
-    await new Promise(resolve => setTimeout(resolve, 200));
+  if (!navigator.clipboard || !window.ClipboardItem) {
+    throw new Error('Clipboard API is not supported in this browser or context.');
+  }
 
-    // 2. Capture using html2canvas with optimal settings
-    const canvas = await html2canvas(element, {
-      scale: 3,                // Multiplies size for high-DPI crisp export
-      useCORS: true,           // Critical for loading Spotify CDN elements
-      allowTaint: false,
-      backgroundColor: null,   // Keep background transparent
-      logging: false,
-      onclone: (clonedDoc) => {
-        // Ensure any active transformations or shadows are removed for clipboard clean render
-        const clonedCard = clonedDoc.querySelector('.boarding-pass') || clonedDoc.querySelector('.luggage-tag');
-        if (clonedCard) {
-          clonedCard.style.transform = 'none';
-          clonedCard.style.boxShadow = 'none';
-        }
+  // Define the asynchronous image generation promise
+  const imagePromise = (async () => {
+    try {
+      // 1. Ensure all custom fonts are loaded before capturing
+      if (document.fonts && document.fonts.ready) {
+        await document.fonts.ready;
       }
-    });
+      
+      // Give a tiny buffer for layout adjustments
+      await new Promise(resolve => setTimeout(resolve, 100));
 
-    // 3. Convert canvas to blob and write to clipboard
-    return new Promise((resolve, reject) => {
-      canvas.toBlob(async (blob) => {
-        if (!blob) {
-          reject(new Error('Failed to generate image blob.'));
-          return;
+      // 2. Capture using html2canvas with optimal settings
+      const canvas = await html2canvas(element, {
+        scale: 3,                // Multiplies size for high-DPI crisp export
+        useCORS: true,           // Critical for loading Spotify CDN elements
+        allowTaint: false,
+        backgroundColor: null,   // Keep background transparent
+        logging: false,
+        onclone: (clonedDoc) => {
+          // Ensure any active transformations or shadows are removed for clipboard clean render
+          const clonedCard = clonedDoc.querySelector('.boarding-pass') || clonedDoc.querySelector('.luggage-tag');
+          if (clonedCard) {
+            clonedCard.style.transform = 'none';
+            clonedCard.style.boxShadow = 'none';
+          }
         }
-        try {
-          await navigator.clipboard.write([
-            new ClipboardItem({ 'image/png': blob })
-          ]);
-          resolve(true);
-        } catch (err) {
-          console.error('Clipboard write error:', err);
-          reject(new Error('Writing image to clipboard blocked by browser security or not supported.'));
-        }
-      }, 'image/png');
-    });
-  } catch (error) {
-    console.error('Error copying image to clipboard:', error);
-    throw error;
+      });
+
+      // 3. Return a promise that resolves to the blob
+      return new Promise((resolve, reject) => {
+        canvas.toBlob((blob) => {
+          if (blob) resolve(blob);
+          else reject(new Error('Failed to generate image blob.'));
+        }, 'image/png');
+      });
+    } catch (err) {
+      console.error('Error generating image for clipboard:', err);
+      throw err;
+    }
+  })();
+
+  try {
+    // Attempt Promise-based clipboard write (Safari & modern Chrome support this)
+    // By passing the promise immediately, the browser registers the user gesture synchronously.
+    await navigator.clipboard.write([
+      new ClipboardItem({
+        'image/png': imagePromise
+      })
+    ]);
+    return true;
+  } catch (err) {
+    console.warn('Promise-based ClipboardItem write failed, attempting standard resolved write fallback...', err);
+    try {
+      // Fallback for browsers that don't support promises inside ClipboardItem (like Firefox or older Chrome)
+      const blob = await imagePromise;
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          'image/png': blob
+        })
+      ]);
+      return true;
+    } catch (fallbackErr) {
+      console.error('Standard clipboard write fallback failed:', fallbackErr);
+      throw new Error('Clipboard copy blocked by browser security or not supported.');
+    }
   }
 }
