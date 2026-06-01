@@ -1008,14 +1008,19 @@ function bindEvents() {
   const clipboardBtn = document.getElementById('clipboard-btn');
   if (clipboardBtn) {
     clipboardBtn.addEventListener('click', async () => {
-      const targetCard = state.previewMode === 'ticket' 
-        ? document.querySelector('.boarding-pass') 
-        : document.querySelector('.luggage-tag');
-      if (!targetCard) return;
-
       clipboardBtn.disabled = true;
       state.clipboardStatus = 'copying';
       renderApp();
+      
+      // Query the newly rendered DOM element to avoid passing a detached element reference to html2canvas
+      const targetCard = state.previewMode === 'ticket' 
+        ? document.querySelector('.boarding-pass') 
+        : document.querySelector('.luggage-tag');
+      if (!targetCard) {
+        state.clipboardStatus = 'error';
+        renderApp();
+        return;
+      }
       
       try {
         playAirportChime(); // Play chime!
