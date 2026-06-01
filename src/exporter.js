@@ -5,7 +5,7 @@ import html2canvas from 'html2canvas';
  * @param {HTMLElement} element The element to capture
  * @param {string} filename The name of the downloaded file
  */
-export async function exportElementAsImage(element, filename = 'sonic-boarding-pass.png') {
+export async function exportElementAsImage(element, filename = 'tuneticket-boarding-pass.png') {
   try {
     // 1. Ensure all custom fonts are loaded before capturing
     if (document.fonts && document.fonts.ready) {

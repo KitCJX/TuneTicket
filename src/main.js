@@ -168,7 +168,7 @@ function renderApp() {
             </g>
           </svg>
         </div>
-        <h1>Sonic Boarding Pass</h1>
+        <h1>TuneTicket</h1>
       </div>
       <p>Clean Spotify track share ticket. Safe browser authentication, full multi-language Support.</p>
     </header>
@@ -286,7 +286,7 @@ function renderApp() {
                   <div class="header-row">
                     <div class="airline-info">
                       ${ICONS.plane}
-                      <span class="airline-name">SONIC AIRWAYS</span>
+                      <span class="airline-name">TUNETICKET AIRWAYS</span>
                     </div>
                     <span class="flight-class-badge">${meta.classText}</span>
                   </div>
@@ -300,12 +300,12 @@ function renderApp() {
                     <div class="route-connector">
                       <span class="route-line"></span>
                       <span class="route-plane">${ICONS.plane}</span>
-                      <span class="flight-duration-lbl">FLIGHT SW26</span>
+                      <span class="flight-duration-lbl">FLIGHT TT26</span>
                     </div>
 
                     <div class="airport-info" style="text-align: right;">
-                      <span class="val-large">SNC</span>
-                      <span class="airport-city">Sonic Wave</span>
+                      <span class="val-large">TUN</span>
+                      <span class="airport-city">Tune Destination</span>
                     </div>
                   </div>
 
@@ -384,8 +384,8 @@ function renderApp() {
                     </div>
                     <span class="lbl" style="font-size:0.8rem; margin:0 0.25rem;">&gt;</span>
                     <div style="text-align: right;">
-                      <div class="val-large" style="font-size: 1.6rem; line-height:1;">SNC</div>
-                      <div class="lbl" style="font-size:0.5rem;">Sonic Wave</div>
+                      <div class="val-large" style="font-size: 1.6rem; line-height:1;">TUN</div>
+                      <div class="lbl" style="font-size:0.5rem;">Tune Destination</div>
                     </div>
                   </div>
 
@@ -599,7 +599,7 @@ function bindEvents() {
           .toLowerCase()
           .replace(/\s+/g, '-');
         
-        await exportElementAsImage(passCard, `sonic-boarding-pass-${cleanName}.png`);
+        await exportElementAsImage(passCard, `tuneticket-boarding-pass-${cleanName}.png`);
         state.errorMessage = '';
       } catch (err) {
         state.errorMessage = err.message;
