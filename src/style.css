@@ -512,7 +512,7 @@ header p {
   border-radius: 0.75rem;
   box-shadow: var(--shadow-card);
   color: var(--card-text);
-  font-family: var(--font-mono);
+  font-family: 'Outfit', 'Courier New', Courier, monospace;
   width: 780px;
   height: 440px;
   display: flex;
@@ -569,7 +569,7 @@ header p {
   color: var(--card-text-muted);
   letter-spacing: 0.05em;
   margin-bottom: 0.15rem;
-  font-family: var(--font-display);
+  font-family: 'Outfit', 'Noto Sans', 'Noto Sans Thai', sans-serif;
 }
 
 .val {
@@ -1087,7 +1087,7 @@ header p {
   border-radius: 0.75rem;
   box-shadow: var(--shadow-card);
   color: var(--card-text);
-  font-family: var(--font-mono);
+  font-family: 'Outfit', 'Courier New', Courier, monospace;
   width: 380px;
   height: 680px; /* Increased to fit Top 5 manifest without clipping footer barcodes */
   display: flex;
@@ -1249,7 +1249,7 @@ header p {
   font-weight: 800;
   line-height: 1.6;
   color: var(--card-text);
-  font-family: var(--font-mono);
+  font-family: 'Outfit', 'Courier New', Courier, monospace;
 }
 
 .tag-cargo-item span {

@@ -37,6 +37,17 @@ export async function exportElementAsImage(element, filename = 'tuneticket-board
           clonedDoc.body.style.textSizeAdjust = '100%';
         }
         
+        // Copy loaded fonts from parent document to ensure perfect layout bounds measurements on Safari/iOS
+        if (document.fonts && clonedDoc.fonts) {
+          try {
+            document.fonts.forEach(font => {
+              clonedDoc.fonts.add(font);
+            });
+          } catch (e) {
+            console.warn('Failed to copy FontFace to cloned iframe:', e);
+          }
+        }
+        
         const clonedCard = clonedDoc.querySelector('.boarding-pass') || clonedDoc.querySelector('.luggage-tag');
         if (clonedCard) {
           clonedCard.style.transform = 'none';
@@ -105,6 +116,17 @@ export async function copyElementToClipboard(element) {
             clonedDoc.body.style.minWidth = `${targetWidth}px`;
             clonedDoc.body.style.webkitTextSizeAdjust = '100%';
             clonedDoc.body.style.textSizeAdjust = '100%';
+          }
+          
+          // Copy loaded fonts from parent document to ensure perfect layout bounds measurements on Safari/iOS
+          if (document.fonts && clonedDoc.fonts) {
+            try {
+              document.fonts.forEach(font => {
+                clonedDoc.fonts.add(font);
+              });
+            } catch (e) {
+              console.warn('Failed to copy FontFace to cloned iframe:', e);
+            }
           }
           
           // Ensure any active transformations or shadows are removed for clipboard clean render
