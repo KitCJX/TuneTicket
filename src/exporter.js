@@ -1,5 +1,83 @@
 import html2canvas from 'html2canvas';
 
+const EXPORT_DIMENSIONS = {
+  ticket: { width: 780, height: 440 },
+  tag: { width: 380, height: 680 }
+};
+
+function getExportDimensions(element) {
+  return element.classList.contains('luggage-tag')
+    ? EXPORT_DIMENSIONS.tag
+    : EXPORT_DIMENSIONS.ticket;
+}
+
+function createNativeExportClone(element, width, height) {
+  const host = document.createElement('div');
+  host.setAttribute('aria-hidden', 'true');
+  host.style.position = 'fixed';
+  host.style.left = '0';
+  host.style.top = '0';
+  host.style.width = `${width}px`;
+  host.style.height = `${height}px`;
+  host.style.overflow = 'hidden';
+  host.style.pointerEvents = 'none';
+  host.style.zIndex = '-1';
+  host.style.webkitTextSizeAdjust = '100%';
+  host.style.textSizeAdjust = '100%';
+
+  const clone = element.cloneNode(true);
+  clone.style.width = `${width}px`;
+  clone.style.height = `${height}px`;
+  clone.style.minWidth = `${width}px`;
+  clone.style.maxWidth = `${width}px`;
+  clone.style.minHeight = `${height}px`;
+  clone.style.maxHeight = `${height}px`;
+  clone.style.transform = 'none';
+  clone.style.transformOrigin = 'center top';
+  clone.style.position = 'relative';
+  clone.style.left = '0';
+  clone.style.top = '0';
+  clone.style.margin = '0';
+  clone.style.flexShrink = '0';
+  clone.style.boxShadow = 'none';
+
+  host.appendChild(clone);
+  document.body.appendChild(host);
+
+  return { host, clone };
+}
+
+export async function renderElementToCanvas(element) {
+  if (document.fonts && document.fonts.ready) {
+    await document.fonts.ready;
+  }
+
+  await new Promise(resolve => requestAnimationFrame(() => resolve()));
+
+  const { width, height } = getExportDimensions(element);
+  const { host, clone } = createNativeExportClone(element, width, height);
+
+  try {
+    return await html2canvas(clone, {
+      width,
+      height,
+      scale: 3,
+      useCORS: true,
+      allowTaint: false,
+      backgroundColor: null,
+      logging: false,
+      windowWidth: width,
+      windowHeight: height,
+      scrollX: 0,
+      scrollY: 0,
+      x: 0,
+      y: 0
+    });
+  } finally {
+    host.remove();
+  }
+}
+
 /**
  * Exports a DOM element as a downloadable image (PNG)
  * @param {HTMLElement} element The element to capture
@@ -7,59 +85,8 @@ import html2canvas from 'html2canvas';
  */
 export async function exportElementAsImage(element, filename = 'tuneticket-boarding-pass.png') {
   try {
-    // 1. Ensure all custom fonts are loaded before capturing
-    if (document.fonts && document.fonts.ready) {
-      await document.fonts.ready;
-    }
-    
-    // Give a tiny buffer for layout adjustments
-    await new Promise(resolve => setTimeout(resolve, 200));
+    const canvas = await renderElementToCanvas(element);
 
-    const isTag = element.classList.contains('luggage-tag');
-    const targetWidth = isTag ? 380 : 780;
-    const targetHeight = isTag ? 680 : 440;
-
-    // 2. Capture using html2canvas with optimal settings
-    const canvas = await html2canvas(element, {
-      scale: 3,                // Multiplies size for high-DPI crisp export (good for Instagram/Twitter)
-      useCORS: true,           // Critical for loading Spotify CDN album arts/profile pictures
-      allowTaint: false,
-      backgroundColor: null,   // Keep background transparent so the rounded corners look right
-      logging: false,
-      windowWidth: targetWidth,
-      windowHeight: targetHeight,
-      onclone: (clonedDoc) => {
-        // Force the iframe body to have the exact native width of the card to prevent layout squishing on mobile
-        if (clonedDoc.body) {
-          clonedDoc.body.style.width = `${targetWidth}px`;
-          clonedDoc.body.style.minWidth = `${targetWidth}px`;
-          clonedDoc.body.style.webkitTextSizeAdjust = '100%';
-          clonedDoc.body.style.textSizeAdjust = '100%';
-        }
-        
-        // Copy loaded fonts from parent document to ensure perfect layout bounds measurements on Safari/iOS
-        if (document.fonts && clonedDoc.fonts) {
-          try {
-            document.fonts.forEach(font => {
-              clonedDoc.fonts.add(font);
-            });
-          } catch (e) {
-            console.warn('Failed to copy FontFace to cloned iframe:', e);
-          }
-        }
-        
-        const clonedCard = clonedDoc.querySelector('.boarding-pass') || clonedDoc.querySelector('.luggage-tag');
-        if (clonedCard) {
-          clonedCard.style.transform = 'none';
-          clonedCard.style.boxShadow = 'none';
-          clonedCard.style.position = 'relative';
-          clonedCard.style.left = '0';
-          clonedCard.style.margin = '0';
-        }
-      }
-    });
-
-    // 3. Convert canvas to data URL and trigger download
     const dataUrl = canvas.toDataURL('image/png');
     const link = document.createElement('a');
     link.download = filename;
@@ -88,60 +115,8 @@ export async function copyElementToClipboard(element) {
   // Define the asynchronous image generation promise
   const imagePromise = (async () => {
     try {
-      // 1. Ensure all custom fonts are loaded before capturing
-      if (document.fonts && document.fonts.ready) {
-        await document.fonts.ready;
-      }
-      
-      // Give a tiny buffer for layout adjustments
-      await new Promise(resolve => setTimeout(resolve, 100));
+      const canvas = await renderElementToCanvas(element);
 
-      const isTag = element.classList.contains('luggage-tag');
-      const targetWidth = isTag ? 380 : 780;
-      const targetHeight = isTag ? 680 : 440;
-
-      // 2. Capture using html2canvas with optimal settings
-      const canvas = await html2canvas(element, {
-        scale: 3,                // Multiplies size for high-DPI crisp export
-        useCORS: true,           // Critical for loading Spotify CDN elements
-        allowTaint: false,
-        backgroundColor: null,   // Keep background transparent
-        logging: false,
-        windowWidth: targetWidth,
-        windowHeight: targetHeight,
-        onclone: (clonedDoc) => {
-          // Force the iframe body to have the exact native width of the card to prevent layout squishing on mobile
-          if (clonedDoc.body) {
-            clonedDoc.body.style.width = `${targetWidth}px`;
-            clonedDoc.body.style.minWidth = `${targetWidth}px`;
-            clonedDoc.body.style.webkitTextSizeAdjust = '100%';
-            clonedDoc.body.style.textSizeAdjust = '100%';
-          }
-          
-          // Copy loaded fonts from parent document to ensure perfect layout bounds measurements on Safari/iOS
-          if (document.fonts && clonedDoc.fonts) {
-            try {
-              document.fonts.forEach(font => {
-                clonedDoc.fonts.add(font);
-              });
-            } catch (e) {
-              console.warn('Failed to copy FontFace to cloned iframe:', e);
-            }
-          }
-          
-          // Ensure any active transformations or shadows are removed for clipboard clean render
-          const clonedCard = clonedDoc.querySelector('.boarding-pass') || clonedDoc.querySelector('.luggage-tag');
-          if (clonedCard) {
-            clonedCard.style.transform = 'none';
-            clonedCard.style.boxShadow = 'none';
-            clonedCard.style.position = 'relative';
-            clonedCard.style.left = '0';
-            clonedCard.style.margin = '0';
-          }
-        }
-      });
-
-      // 3. Return a promise that resolves to the blob
       return new Promise((resolve, reject) => {
         canvas.toBlob((blob) => {
           if (blob) resolve(blob);
