@@ -257,7 +257,7 @@ function renderLuggageTagHTML(meta, stats, tracksList) {
             const hasPreview = !!track.preview_url;
             const isPlaying = state.currentlyPlayingTrackId === track.id;
             return `
-              <div class="manifest-row ${isPlaying ? 'playing' : ''} ${hasPreview ? 'has-preview' : ''}" style="font-size: 0.72rem; height: 18px; display: flex; justify-content: space-between; align-items: center; line-height: 1.1; overflow: hidden;" data-track-id="${track.id || `mock-${i}`}" data-preview-url="${track.preview_url || ''}">
+              <div class="manifest-row ${isPlaying ? 'playing' : ''} ${hasPreview ? 'has-preview' : ''}" style="font-size: 0.72rem; min-height: 22px; display: flex; justify-content: space-between; align-items: center; line-height: 1.45; overflow: visible;" data-track-id="${track.id || `mock-${i}`}" data-preview-url="${track.preview_url || ''}">
                 <span style="color: var(--accent-secondary); width: 18px; font-weight: 800; display: inline-flex; align-items: center;">
                   ${isPlaying ? `
                     <span class="audio-indicator" style="margin-left: 0; width: 8px; height: 8px;">
@@ -759,7 +759,7 @@ function renderApp() {
                           const hasPreview = !!track.preview_url;
                           const isPlaying = state.currentlyPlayingTrackId === track.id;
                           return `
-                            <div class="manifest-row ${isPlaying ? 'playing' : ''} ${hasPreview ? 'has-preview' : ''}" style="font-size: 0.65rem; height: 16px; display: flex; justify-content: space-between; font-weight: 700; align-items: center; overflow: hidden; line-height: 1;" data-track-id="${track.id || `mock-${i+5}`}" data-preview-url="${track.preview_url || ''}">
+                            <div class="manifest-row ${isPlaying ? 'playing' : ''} ${hasPreview ? 'has-preview' : ''}" style="font-size: 0.65rem; min-height: 20px; display: flex; justify-content: space-between; font-weight: 700; align-items: center; overflow: visible; line-height: 1.45;" data-track-id="${track.id || `mock-${i+5}`}" data-preview-url="${track.preview_url || ''}">
                               <span style="color: var(--accent-secondary); width: 14px; font-weight: 800; display: flex; align-items: center;">
                                 ${isPlaying ? `
                                   <span class="audio-indicator" style="margin-left: 0; width: 8px; height: 8px;">

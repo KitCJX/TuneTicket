@@ -750,10 +750,10 @@ header p {
   align-items: center;
   justify-content: space-between;
   font-size: 0.72rem;
-  line-height: 1.1;
+  line-height: 1.45;
   font-weight: 700;
-  height: 18px; /* Restrict height */
-  overflow: hidden;
+  min-height: 22px;
+  overflow: visible;
 }
 
 .manifest-col-seq {
@@ -769,6 +769,7 @@ header p {
   white-space: nowrap;
   padding-right: 0.75rem;
   display: block; 
+  line-height: inherit;
 }
 
 .manifest-col-desc strong {
@@ -1413,4 +1414,3 @@ header p {
     order: 0;
   }
 }
-
