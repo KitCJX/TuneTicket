@@ -15,6 +15,10 @@ export async function exportElementAsImage(element, filename = 'tuneticket-board
     // Give a tiny buffer for layout adjustments
     await new Promise(resolve => setTimeout(resolve, 200));
 
+    const isTag = element.classList.contains('luggage-tag');
+    const targetWidth = isTag ? 380 : 780;
+    const targetHeight = isTag ? 680 : 440;
+
     // 2. Capture using html2canvas with optimal settings
     const canvas = await html2canvas(element, {
       scale: 3,                // Multiplies size for high-DPI crisp export (good for Instagram/Twitter)
@@ -22,14 +26,24 @@ export async function exportElementAsImage(element, filename = 'tuneticket-board
       allowTaint: false,
       backgroundColor: null,   // Keep background transparent so the rounded corners look right
       logging: false,
+      windowWidth: targetWidth,
+      windowHeight: targetHeight,
       onclone: (clonedDoc) => {
-        // Here we can perform adjustments on the cloned document if needed
-        // For example, making sure there are no rendering glitches
+        // Force the iframe body to have the exact native width of the card to prevent layout squishing on mobile
+        if (clonedDoc.body) {
+          clonedDoc.body.style.width = `${targetWidth}px`;
+          clonedDoc.body.style.minWidth = `${targetWidth}px`;
+          clonedDoc.body.style.webkitTextSizeAdjust = '100%';
+          clonedDoc.body.style.textSizeAdjust = '100%';
+        }
+        
         const clonedCard = clonedDoc.querySelector('.boarding-pass') || clonedDoc.querySelector('.luggage-tag');
         if (clonedCard) {
           clonedCard.style.transform = 'none';
           clonedCard.style.boxShadow = 'none';
-          // Ensure fonts and letter-spacings render properly
+          clonedCard.style.position = 'relative';
+          clonedCard.style.left = '0';
+          clonedCard.style.margin = '0';
         }
       }
     });
@@ -71,6 +85,10 @@ export async function copyElementToClipboard(element) {
       // Give a tiny buffer for layout adjustments
       await new Promise(resolve => setTimeout(resolve, 100));
 
+      const isTag = element.classList.contains('luggage-tag');
+      const targetWidth = isTag ? 380 : 780;
+      const targetHeight = isTag ? 680 : 440;
+
       // 2. Capture using html2canvas with optimal settings
       const canvas = await html2canvas(element, {
         scale: 3,                // Multiplies size for high-DPI crisp export
@@ -78,12 +96,25 @@ export async function copyElementToClipboard(element) {
         allowTaint: false,
         backgroundColor: null,   // Keep background transparent
         logging: false,
+        windowWidth: targetWidth,
+        windowHeight: targetHeight,
         onclone: (clonedDoc) => {
+          // Force the iframe body to have the exact native width of the card to prevent layout squishing on mobile
+          if (clonedDoc.body) {
+            clonedDoc.body.style.width = `${targetWidth}px`;
+            clonedDoc.body.style.minWidth = `${targetWidth}px`;
+            clonedDoc.body.style.webkitTextSizeAdjust = '100%';
+            clonedDoc.body.style.textSizeAdjust = '100%';
+          }
+          
           // Ensure any active transformations or shadows are removed for clipboard clean render
           const clonedCard = clonedDoc.querySelector('.boarding-pass') || clonedDoc.querySelector('.luggage-tag');
           if (clonedCard) {
             clonedCard.style.transform = 'none';
             clonedCard.style.boxShadow = 'none';
+            clonedCard.style.position = 'relative';
+            clonedCard.style.left = '0';
+            clonedCard.style.margin = '0';
           }
         }
       });
