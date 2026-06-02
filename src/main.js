@@ -257,8 +257,8 @@ function renderLuggageTagHTML(meta, stats, tracksList) {
             const hasPreview = !!track.preview_url;
             const isPlaying = state.currentlyPlayingTrackId === track.id;
             return `
-              <div class="manifest-row ${isPlaying ? 'playing' : ''} ${hasPreview ? 'has-preview' : ''}" style="font-size: 0.72rem; min-height: 22px; display: flex; justify-content: space-between; align-items: center; line-height: 1.45; overflow: visible;" data-track-id="${track.id || `mock-${i}`}" data-preview-url="${track.preview_url || ''}">
-                <span style="color: var(--accent-secondary); width: 18px; font-weight: 800; display: inline-flex; align-items: center;">
+              <div class="manifest-row ${isPlaying ? 'playing' : ''} ${hasPreview ? 'has-preview' : ''}" style="font-size: 0.72rem; height: 18px; display: flex; justify-content: space-between; align-items: center; line-height: 1.35; overflow: visible;" data-track-id="${track.id || `mock-${i}`}" data-preview-url="${track.preview_url || ''}">
+                <span style="color: var(--accent-secondary); flex: 0 0 18px; font-weight: 800; display: inline-flex; align-items: center;">
                   ${isPlaying ? `
                     <span class="audio-indicator" style="margin-left: 0; width: 8px; height: 8px;">
                       <span class="audio-bar" style="width: 1.5px;"></span>
@@ -267,11 +267,11 @@ function renderLuggageTagHTML(meta, stats, tracksList) {
                     </span>
                   ` : (i + 1).toString().padStart(2, '0')}
                 </span>
-                <span style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 0.5rem; text-align: left; display: block;">
+                <span style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 2px 0.5rem 2px 0; margin: -2px 0; text-align: left; display: block; line-height: inherit;">
                   ${hasPreview ? `<span class="play-row-icon" style="font-size: 0.55rem; margin-right: 2px;">▶</span>` : ''}
                   <strong>${track.name}</strong> <span style="font-weight:500; color: var(--card-text-muted); margin-left: 4px;">- ${track.artists.map(a => a.name).join(', ')}</span>
                 </span>
-                <span style="font-family: var(--font-mono); color: var(--card-text-muted); font-size: 0.65rem;">${formatDuration(track.duration_ms)}</span>
+                <span style="font-family: var(--font-mono); color: var(--card-text-muted); font-size: 0.65rem; flex: 0 0 34px; text-align: right;">${formatDuration(track.duration_ms)}</span>
               </div>
             `;
           }).join('')}
@@ -759,8 +759,8 @@ function renderApp() {
                           const hasPreview = !!track.preview_url;
                           const isPlaying = state.currentlyPlayingTrackId === track.id;
                           return `
-                            <div class="manifest-row ${isPlaying ? 'playing' : ''} ${hasPreview ? 'has-preview' : ''}" style="font-size: 0.65rem; min-height: 20px; display: flex; justify-content: space-between; font-weight: 700; align-items: center; overflow: visible; line-height: 1.45;" data-track-id="${track.id || `mock-${i+5}`}" data-preview-url="${track.preview_url || ''}">
-                              <span style="color: var(--accent-secondary); width: 14px; font-weight: 800; display: flex; align-items: center;">
+                            <div class="manifest-row ${isPlaying ? 'playing' : ''} ${hasPreview ? 'has-preview' : ''}" style="font-size: 0.65rem; height: 16px; display: flex; justify-content: space-between; font-weight: 700; align-items: center; overflow: visible; line-height: 1.35;" data-track-id="${track.id || `mock-${i+5}`}" data-preview-url="${track.preview_url || ''}">
+                              <span style="color: var(--accent-secondary); flex: 0 0 14px; font-weight: 800; display: flex; align-items: center;">
                                 ${isPlaying ? `
                                   <span class="audio-indicator" style="margin-left: 0; width: 8px; height: 8px;">
                                     <span class="audio-bar" style="width: 1.5px;"></span>
@@ -769,11 +769,11 @@ function renderApp() {
                                   </span>
                                 ` : (i + 6).toString().padStart(2, '0')}
                               </span>
-                              <span style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 0.25rem; text-align: left; display: block;">
+                              <span style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 2px 0.25rem 2px 0; margin: -2px 0; text-align: left; display: block; line-height: inherit;">
                                 ${hasPreview ? `<span class="play-row-icon" style="font-size: 0.5rem; margin-right: 2px;">▶</span>` : ''}
                                 <strong>${track.name}</strong> <span style="font-weight:500; color: var(--card-text-muted);">- ${track.artists[0].name}</span>
                               </span>
-                              <span style="font-family: var(--font-mono); color: var(--card-text-muted); font-size: 0.6rem;">${formatDuration(track.duration_ms)}</span>
+                              <span style="font-family: var(--font-mono); color: var(--card-text-muted); font-size: 0.6rem; flex: 0 0 28px; text-align: right;">${formatDuration(track.duration_ms)}</span>
                             </div>
                           `;
                         }).join('')}

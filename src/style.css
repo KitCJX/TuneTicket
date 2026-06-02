@@ -750,14 +750,14 @@ header p {
   align-items: center;
   justify-content: space-between;
   font-size: 0.72rem;
-  line-height: 1.45;
+  line-height: 1.35;
   font-weight: 700;
-  min-height: 22px;
+  height: 18px;
   overflow: visible;
 }
 
 .manifest-col-seq {
-  width: 20px;
+  flex: 0 0 20px;
   color: var(--accent-secondary);
   font-weight: 800;
 }
@@ -770,6 +770,10 @@ header p {
   padding-right: 0.75rem;
   display: block; 
   line-height: inherit;
+  padding-top: 2px;
+  padding-bottom: 2px;
+  margin-top: -2px;
+  margin-bottom: -2px;
 }
 
 .manifest-col-desc strong {
@@ -790,7 +794,7 @@ header p {
 
 .manifest-col-dur {
   text-align: right;
-  width: 40px;
+  flex: 0 0 40px;
   color: var(--card-text-muted);
 }
 
