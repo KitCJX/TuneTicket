@@ -14,14 +14,15 @@ function getExportDimensions(element) {
 function createNativeExportClone(element, width, height) {
   const host = document.createElement('div');
   host.setAttribute('aria-hidden', 'true');
-  host.style.position = 'fixed';
-  host.style.left = '0';
+  host.style.position = 'absolute';
+  host.style.left = `-${width + 1024}px`;
   host.style.top = '0';
   host.style.width = `${width}px`;
   host.style.height = `${height}px`;
   host.style.overflow = 'hidden';
   host.style.pointerEvents = 'none';
-  host.style.zIndex = '-1';
+  host.style.zIndex = '0';
+  host.style.contain = 'layout style paint';
   host.style.webkitTextSizeAdjust = '100%';
   host.style.textSizeAdjust = '100%';
 
@@ -69,9 +70,7 @@ export async function renderElementToCanvas(element) {
       windowWidth: width,
       windowHeight: height,
       scrollX: 0,
-      scrollY: 0,
-      x: 0,
-      y: 0
+      scrollY: 0
     });
   } finally {
     host.remove();
