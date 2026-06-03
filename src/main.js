@@ -555,17 +555,19 @@ function renderApp() {
             Copy to Clipboard
           </button>
           
-          ${state.clipboardStatus === 'copied' ? `
-            <div class="playlist-success-box" style="background: rgba(59, 130, 246, 0.08); border-color: rgba(59, 130, 246, 0.2); color: #60a5fa;">
-              <span>📋 Copied to Clipboard!</span>
-            </div>
-          ` : ''}
-          
-          ${state.clipboardStatus === 'error' ? `
-            <div class="playlist-success-box" style="background: rgba(239, 68, 68, 0.08); border-color: rgba(239, 68, 68, 0.2); color: #f87171;">
-              <span>⚠️ Copy Failed. Try downloading instead.</span>
-            </div>
-          ` : ''}
+          <div class="clipboard-status-slot" aria-live="polite">
+            ${state.clipboardStatus === 'copied' ? `
+              <div class="playlist-success-box" style="background: rgba(59, 130, 246, 0.08); border-color: rgba(59, 130, 246, 0.2); color: #60a5fa;">
+                <span>Copied to Clipboard!</span>
+              </div>
+            ` : ''}
+
+            ${state.clipboardStatus === 'error' ? `
+              <div class="playlist-success-box" style="background: rgba(239, 68, 68, 0.08); border-color: rgba(239, 68, 68, 0.2); color: #f87171;">
+                <span>Copy Failed. Try downloading instead.</span>
+              </div>
+            ` : ''}
+          </div>
         </div>
 
       </section>
@@ -1000,42 +1002,59 @@ function bindEvents() {
   const clipboardBtn = document.getElementById('clipboard-btn');
   if (clipboardBtn) {
     clipboardBtn.addEventListener('click', async () => {
-      clipboardBtn.disabled = true;
-      state.clipboardStatus = 'copying';
-      renderApp();
-      
-      // Query the newly rendered DOM element to avoid passing a detached element reference to html2canvas
+      const statusSlot = document.querySelector('.clipboard-status-slot');
+      const setClipboardStatus = (status) => {
+        state.clipboardStatus = status;
+        if (!statusSlot) return;
+        if (status === 'copied') {
+          statusSlot.innerHTML = `
+            <div class="playlist-success-box" style="background: rgba(59, 130, 246, 0.08); border-color: rgba(59, 130, 246, 0.2); color: #60a5fa;">
+              <span>Copied to Clipboard!</span>
+            </div>
+          `;
+        } else if (status === 'error') {
+          statusSlot.innerHTML = `
+            <div class="playlist-success-box" style="background: rgba(239, 68, 68, 0.08); border-color: rgba(239, 68, 68, 0.2); color: #f87171;">
+              <span>Copy Failed. Try downloading instead.</span>
+            </div>
+          `;
+        } else {
+          statusSlot.innerHTML = '';
+        }
+      };
+
       const targetCard = state.previewMode === 'ticket' 
         ? document.querySelector('.boarding-pass') 
         : document.querySelector('.luggage-tag');
       if (!targetCard) {
-        state.clipboardStatus = 'error';
-        renderApp();
+        setClipboardStatus('error');
         return;
       }
+
+      const oldBtnText = clipboardBtn.innerHTML;
+      clipboardBtn.disabled = true;
+      clipboardBtn.innerHTML = '<div class="spinner" style="width:14px;height:14px;margin:0;border-width:2px;display:inline-block;vertical-align:middle;margin-right:8px;"></div> Copying...';
       
       try {
         playAirportChime(); // Play chime!
         await copyElementToClipboard(targetCard);
-        state.clipboardStatus = 'copied';
+        setClipboardStatus('copied');
         
         setTimeout(() => {
           if (state.clipboardStatus === 'copied') {
-            state.clipboardStatus = '';
-            renderApp();
+            setClipboardStatus('');
           }
         }, 4000);
       } catch (err) {
-        state.clipboardStatus = 'error';
+        setClipboardStatus('error');
         setTimeout(() => {
           if (state.clipboardStatus === 'error') {
-            state.clipboardStatus = '';
-            renderApp();
+            setClipboardStatus('');
           }
         }, 4000);
       } finally {
         clipboardBtn.disabled = false;
-        renderApp();
+        clipboardBtn.innerHTML = oldBtnText;
       }
     });
   }
