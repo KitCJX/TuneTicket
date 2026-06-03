@@ -1155,11 +1155,11 @@ header p {
 .luggage-tag::before {
   content: '';
   position: absolute;
-  top: 14px;
+  top: 8px;
   left: 50%;
   transform: translateX(-50%);
-  width: 48px;
-  height: 12px;
+  width: 40px;
+  height: 10px;
   background-color: var(--bg-color); /* Cutout to match dashboard bg */
   border-radius: 4px;
   z-index: 10;
