@@ -900,6 +900,58 @@ header p {
   color: var(--card-text-muted);
 }
 
+/* Export-only adjustments keep interactive affordances out of the image. */
+.export-render .play-row-icon {
+  display: none !important;
+}
+
+.export-render .pass-stub {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+.export-render .stub-header {
+  margin-bottom: 0.5rem;
+}
+
+.export-render .stub-route {
+  margin-bottom: 0.65rem;
+}
+
+.export-render .stub-grid {
+  gap: 0.5rem;
+}
+
+.export-render .stub-manifest-table {
+  flex: 0 0 auto;
+  margin-top: 0.25rem !important;
+  padding-top: 0.3rem !important;
+  overflow: visible !important;
+}
+
+.export-render .stub-manifest-table > .lbl {
+  margin-bottom: 0.15rem !important;
+}
+
+.export-render .stub-manifest-table .manifest-list {
+  gap: 0.12rem !important;
+}
+
+.export-render .stub-manifest-table .manifest-row {
+  height: 15px !important;
+  min-height: 15px;
+}
+
+.export-render .stub-manifest-table .manifest-artwork {
+  width: 14px;
+  height: 14px;
+  flex-basis: 14px;
+}
+
+.export-render .barcode-vertical-box {
+  margin-top: 0.5rem;
+}
+
 /* App Explainer instructions section */
 .explainer {
   background-color: var(--panel-bg);

@@ -27,6 +27,7 @@ function createNativeExportClone(element, width, height) {
   host.style.textSizeAdjust = '100%';
 
   const clone = element.cloneNode(true);
+  clone.classList.add('export-render');
   clone.style.width = `${width}px`;
   clone.style.height = `${height}px`;
   clone.style.minWidth = `${width}px`;
