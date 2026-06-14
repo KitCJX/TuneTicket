@@ -1,70 +1,81 @@
-# 🎫 TuneTicket
+# TuneTicket
 
-Your musical journey, printed on a premium flight boarding pass. 
+TuneTicket turns a Spotify user's top tracks into a shareable airline boarding pass or vertical luggage tag. The application runs entirely in the browser using Spotify OAuth PKCE and the Spotify Web API.
 
-**TuneTicket** is a client-side web application that integrates with the Spotify Web API to convert your top listening history (4 weeks, 6 months, or all-time) into a beautifully rendered, shareable flight boarding pass. It features custom themes, dynamic flight information, and full native support for multi-language scripts (like Thai, Japanese, and Korean).
+## Features
 
----
+- Top tracks from approximately 4 weeks, 6 months, or 1 year of listening history.
+- Configurable top 5, 8, or 10 track manifests.
+- Horizontal boarding pass and vertical luggage tag layouts.
+- Classic, Midnight, Stark, and Forest themes.
+- Album artwork and Unicode track, artist, and passenger names.
+- Generated flight duration, altitude, baggage, class, route, and barcode details.
+- Keyboard-accessible track controls with clear play, pause, and fallback states.
+- 30-second previews when Spotify supplies a preview URL.
+- Direct Spotify fallback when a preview is unavailable.
+- High-resolution PNG download and clipboard image export.
+- Shareable preset links containing layout, theme, time range, and track count.
+- Persisted visual preferences and reduced-motion support.
 
-## ✨ Features
+Spotify's `preview_url` track field is deprecated, nullable, and absent for many tracks. TuneTicket therefore cannot guarantee an in-app preview for every result. Tracks without a clip open on Spotify instead.
 
-- **Dynamic Destination Easter Egg:** The flight destination airport code and city automatically adjust to match your country code (detected via Spotify profile or browser locale—e.g., `SPO` ➔ `TH` for Thailand).
-- **Interactive Ticket & Luggage Tag Toggles:** Toggle between a horizontal **Boarding Pass** or a vertical 9:16 **Luggage Tag** optimal for sharing on mobile/social media stories.
-- **Calculated Cargo Manifest Stats:** Flight statistics calculated from listening history metadata (cruising altitude derived from track popularity, flight duration from track lengths, and baggage load from explicit track counts).
-- **Dynamic Waveform Flight Path:** A custom curved SVG quadratic path mapping the altitude/path of the flight based on track popularity.
-- **Airline Sound Effects & Previews:** Hover or click tracks to play a 30-second preview audio clip (featuring animated visual equalizer waves), accompanied by synthesized airport chimes played via the Web Audio API on actions.
-- **Spotify Playlist Creator:** Connect to Spotify and instantly compile your top tracks into a public Spotify playlist directly from the ticket controls.
-- **High-DPI Capture & Clipboard Copies:** Save high-resolution transparent-notched PNG exports to your system, or copy them directly to your clipboard for instant sharing.
-- **Four Premium Visual Themes:**
-  - ✈️ **Classic:** Clean off-white ticket paper with airline navy and safety orange branding.
-  - 🌌 **Midnight:** Matte charcoal card face with amber guidance styling.
-  - 📰 **Stark:** High-contrast retro editorial black-and-white print.
-  - 🌲 **Forest:** Charter flight cream-beige paper with forest-green text and warm details.
-- **Security First:** Utilizes Spotify OAuth PKCE flow entirely client-side. No user secrets are stored or sent to external servers.
+## Security and privacy
 
----
+- Authorization uses OAuth PKCE with a random authorization `state` value.
+- Spotify access, refresh, and PKCE values use `sessionStorage` and are removed when the browser tab session ends.
+- Legacy token values written by older versions are removed from `localStorage`.
+- Spotify profile data, track metadata, errors, and user inputs are escaped before HTML rendering.
+- No client secret is used or shipped to the browser.
+- Preset links do not include passenger names, account data, or tokens.
 
-## 🛠️ Tech Stack
+This is still a client-side application. Do not add a Spotify client secret to `.env` or any frontend source file.
 
-- **Core:** HTML5, Vanilla JavaScript (ES Modules)
-- **Styling:** CSS3 (Custom Variables, Flexbox, Grid, Frosted Glass effects)
-- **Bundler:** Vite
-- **Export Engine:** html2canvas
+## Tech stack
 
----
+- HTML5 and vanilla JavaScript modules
+- CSS custom properties, Grid, and Flexbox
+- Vite
+- html2canvas
+- Node test runner
+- ESLint
 
-## 🚀 Getting Started
+## Local development
 
-### 1. Deploy the Application
-Since the Spotify Developer Dashboard requires a secure, live production URL (`https://`) and does not support local redirects (`localhost`) for application authentication:
-1. Push this project to your GitHub repository.
-2. Import the repository into **[Vercel](https://vercel.com/)** (or your preferred hosting provider).
-3. Copy your live deployment URL (e.g. `https://tuneticket.vercel.app/`).
+```bash
+npm install
+npm run dev -- --host 127.0.0.1
+```
 
-### 2. Register a Spotify Developer App
-To authorize Spotify connections, you need a Client ID:
-1. Go to the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard).
-2. Click **Create App** (name it *TuneTicket*).
-3. Under App Settings, check the **Web API** option.
-4. Paste your live deployment URL (e.g. `https://tuneticket.vercel.app/`) into the **Redirect URIs** field, click **Add**, and click **Save** at the bottom of the page.
-5. Copy your **Client ID** from the Spotify App details page.
+Spotify permits HTTP redirect URIs for explicit loopback IP addresses such as `127.0.0.1`, but not `localhost`. Add the exact Vite URL shown in the terminal to the Spotify Developer Dashboard, for example:
 
-### 3. Add Client ID to Vercel
-1. Go to your project settings in Vercel.
-2. Select **Environment Variables** in the left sidebar.
-3. Add a new variable:
-   - **Key:** `VITE_SPOTIFY_CLIENT_ID`
-   - **Value:** *(Paste your Spotify Client ID here)*
-4. Click **Save** and trigger a rebuild of the application. Your users can now log in securely!
+```text
+http://127.0.0.1:5173/
+```
 
----
+Create `.env` with the public client ID:
 
-## 🔒 Disclaimer
+```text
+VITE_SPOTIFY_CLIENT_ID=your_client_id
+```
 
-This application is a fan project and is not affiliated with, sponsored by, or endorsed by Spotify AB. Spotify is a registered trademark of Spotify AB.
+If this variable is omitted, TuneTicket displays a client ID field in the interface for local testing.
 
----
+## Production setup
 
-## 🏷️ Credits
+1. Create an app in the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard).
+2. Enable the Web API.
+3. Add the exact HTTPS deployment URL under Redirect URIs.
+4. Configure `VITE_SPOTIFY_CLIENT_ID` in the deployment environment.
+5. Build and deploy the static `dist` output.
 
-Created with ❤️ by **CJX1001** (2026).
+## Quality checks
+
+```bash
+npm run check
+```
+
+This runs ESLint, unit tests, and the production Vite build.
+
+## Disclaimer
+
+TuneTicket is a fan project and is not affiliated with, sponsored by, or endorsed by Spotify AB. Spotify is a trademark of Spotify AB.

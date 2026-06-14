@@ -8,28 +8,61 @@ import {
   logout
 } from './spotify';
 import { exportElementAsImage, copyElementToClipboard } from './exporter';
+import {
+  ALLOWED_PREVIEW_MODES,
+  ALLOWED_THEMES,
+  ALLOWED_TIME_RANGES,
+  ALLOWED_TRACK_LIMITS,
+  buildPresetUrl,
+  calculateCargoStats,
+  escapeHtml,
+  formatDuration,
+  readPreset,
+  safeHttpUrl,
+  safeMediaUrl
+} from './utils';
 
 // Default Client ID check from environment variables
 const ENV_CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID || '';
+const DEMO_PREVIEW_URL = 'tuneticket:demo-preview';
 
 // Generic placeholder tracks shown before user logs in (enriched with popularity, explicit tags, and preview audio for full feature testing)
 const MOCK_TRACKS = [
-  { id: 'mock-01', name: 'TRACK NAME 01', artists: [{ name: 'ARTIST 01' }], duration_ms: 210000, preview_url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', popularity: 82, explicit: false },
-  { id: 'mock-02', name: 'TRACK NAME 02', artists: [{ name: 'ARTIST 02' }], duration_ms: 185000, preview_url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3', popularity: 74, explicit: true },
-  { id: 'mock-03', name: 'TRACK NAME 03', artists: [{ name: 'ARTIST 03' }], duration_ms: 240000, preview_url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3', popularity: 68, explicit: false },
-  { id: 'mock-04', name: 'TRACK NAME 04', artists: [{ name: 'ARTIST 04' }], duration_ms: 195000, preview_url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3', popularity: 89, explicit: false },
-  { id: 'mock-05', name: 'TRACK NAME 05', artists: [{ name: 'ARTIST 05' }], duration_ms: 220000, preview_url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3', popularity: 55, explicit: false },
-  { id: 'mock-06', name: 'TRACK NAME 06', artists: [{ name: 'ARTIST 06' }], duration_ms: 175000, preview_url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3', popularity: 61, explicit: false },
-  { id: 'mock-07', name: 'TRACK NAME 07', artists: [{ name: 'ARTIST 07' }], duration_ms: 205000, preview_url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3', popularity: 79, explicit: false },
-  { id: 'mock-08', name: 'TRACK NAME 08', artists: [{ name: 'ARTIST 08' }], duration_ms: 230000, preview_url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3', popularity: 93, explicit: true },
-  { id: 'mock-09', name: 'TRACK NAME 09', artists: [{ name: 'ARTIST 09' }], duration_ms: 190000, preview_url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3', popularity: 42, explicit: false },
-  { id: 'mock-10', name: 'TRACK NAME 10', artists: [{ name: 'ARTIST 10' }], duration_ms: 215000, preview_url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3', popularity: 70, explicit: false }
+  { id: 'mock-01', name: 'TRACK NAME 01', artists: [{ name: 'ARTIST 01' }], duration_ms: 210000, preview_url: DEMO_PREVIEW_URL, popularity: 82, explicit: false },
+  { id: 'mock-02', name: 'TRACK NAME 02', artists: [{ name: 'ARTIST 02' }], duration_ms: 185000, preview_url: DEMO_PREVIEW_URL, popularity: 74, explicit: true },
+  { id: 'mock-03', name: 'TRACK NAME 03', artists: [{ name: 'ARTIST 03' }], duration_ms: 240000, preview_url: DEMO_PREVIEW_URL, popularity: 68, explicit: false },
+  { id: 'mock-04', name: 'TRACK NAME 04', artists: [{ name: 'ARTIST 04' }], duration_ms: 195000, preview_url: DEMO_PREVIEW_URL, popularity: 89, explicit: false },
+  { id: 'mock-05', name: 'TRACK NAME 05', artists: [{ name: 'ARTIST 05' }], duration_ms: 220000, preview_url: DEMO_PREVIEW_URL, popularity: 55, explicit: false },
+  { id: 'mock-06', name: 'TRACK NAME 06', artists: [{ name: 'ARTIST 06' }], duration_ms: 175000, preview_url: DEMO_PREVIEW_URL, popularity: 61, explicit: false },
+  { id: 'mock-07', name: 'TRACK NAME 07', artists: [{ name: 'ARTIST 07' }], duration_ms: 205000, preview_url: DEMO_PREVIEW_URL, popularity: 79, explicit: false },
+  { id: 'mock-08', name: 'TRACK NAME 08', artists: [{ name: 'ARTIST 08' }], duration_ms: 230000, preview_url: DEMO_PREVIEW_URL, popularity: 93, explicit: true },
+  { id: 'mock-09', name: 'TRACK NAME 09', artists: [{ name: 'ARTIST 09' }], duration_ms: 190000, preview_url: DEMO_PREVIEW_URL, popularity: 42, explicit: false },
+  { id: 'mock-10', name: 'TRACK NAME 10', artists: [{ name: 'ARTIST 10' }], duration_ms: 215000, preview_url: DEMO_PREVIEW_URL, popularity: 70, explicit: false }
 ];
 
 const MOCK_PROFILE = {
   display_name: 'TRAVELER / CHRIS MR',
   images: [{ url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80' }]
 };
+
+const PREFERENCES_KEY = 'tuneticket_preferences';
+const urlPreset = readPreset(window.location.search);
+
+function loadPreferences() {
+  try {
+    const stored = JSON.parse(window.localStorage.getItem(PREFERENCES_KEY) || '{}');
+    return {
+      timeRange: ALLOWED_TIME_RANGES.has(stored.timeRange) ? stored.timeRange : 'medium_term',
+      theme: ALLOWED_THEMES.has(stored.theme) ? stored.theme : 'classic',
+      previewMode: ALLOWED_PREVIEW_MODES.has(stored.previewMode) ? stored.previewMode : 'ticket',
+      trackLimit: ALLOWED_TRACK_LIMITS.has(Number(stored.trackLimit)) ? Number(stored.trackLimit) : 10
+    };
+  } catch {
+    return { timeRange: 'medium_term', theme: 'classic', previewMode: 'ticket', trackLimit: 10 };
+  }
+}
+
+const storedPreferences = loadPreferences();
 
 // Application State
 const state = {
@@ -38,17 +71,20 @@ const state = {
   token: null,
   userProfile: null,
   topTracks: [],
-  timeRange: 'medium_term', // 'short_term' | 'medium_term' | 'long_term'
-  theme: 'classic',         // 'classic' | 'midnight' | 'stark' | 'forest'
+  timeRange: urlPreset.timeRange || storedPreferences.timeRange,
+  theme: urlPreset.theme || storedPreferences.theme,
   customPassengerName: '',
   customSeat: '01A',
   isMockData: true,
   isLoading: false,
   errorMessage: '',
-  previewMode: 'ticket',     // 'ticket' | 'tag'
+  previewMode: urlPreset.previewMode || storedPreferences.previewMode,
+  trackLimit: urlPreset.trackLimit || storedPreferences.trackLimit,
 
   currentlyPlayingTrackId: null,
-  clipboardStatus: ''        // '', 'copied', 'error'
+  clipboardStatus: '',
+  previewStatus: '',
+  shareStatus: ''
 };
 
 // SVG Icons (Plane & Other UI icons inlined to ensure html2canvas loads them natively)
@@ -75,14 +111,8 @@ const BARCODES = {
   `
 };
 
-function formatDuration(ms) {
-  const totalSeconds = Math.floor(ms / 1000);
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-}
-
 let previewAudioInstance = null;
+let previewEndTimer = null;
 
 // Airport terminal chime synthesized directly via the Web Audio API
 function playAirportChime() {
@@ -120,95 +150,181 @@ function playAirportChime() {
   }
 }
 
-// Calculate flight stats based on tracks (tempo, popularity, explicit, duration)
-function getCargoStats(tracks) {
-  if (!tracks || tracks.length === 0) {
-    return {
-      flightTime: '0H 35M',
-      cruisingAltitude: '32,000 FT',
-      baggageWeight: '8.0 KG',
-      passengerClass: 'TRAVEL CLASS',
-      avgPopularity: 65,
-      flightNo: 'TT26',
-      wavePeakY: 15
-    };
-  }
-  
-  const totalMs = tracks.reduce((sum, t) => sum + (t.duration_ms || 0), 0);
-  const totalSec = Math.floor(totalMs / 1000);
-  const hrs = Math.floor(totalSec / 3600);
-  const mins = Math.floor((totalSec % 3600) / 60);
-  const flightTime = `${hrs}H ${mins.toString().padStart(2, '0')}M`;
-  
-  const avgPopularity = Math.round(tracks.reduce((sum, t) => sum + (t.popularity || 0), 0) / tracks.length);
-  const altitude = 15000 + (avgPopularity * 260);
-  const cruisingAltitude = `${altitude.toLocaleString()} FT`;
-  
-  const explicitCount = tracks.filter(t => t.explicit).length;
-  const weightVal = 8.5 + (explicitCount * 2.5) + (tracks[0]?.name.length % 5);
-  const baggageWeight = `${weightVal.toFixed(1)} KG`;
-  
-  let passengerClass = 'FREQUENT FLYER';
-  if (avgPopularity > 75) {
-    passengerClass = 'FIRST CLASS';
-  } else if (avgPopularity < 45) {
-    passengerClass = 'EXPLORER CLASS';
-  } else {
-    passengerClass = 'PREMIUM CLASS';
-  }
-  
-  // Wave peak Y coordinate mapping: peak Y runs 2 (high curve) to 14 (flat curve) relative to a 20px box
-  const wavePeakY = Math.max(2, 14 - Math.round(avgPopularity * 0.12));
-  
-  let flightNo = 'TT26';
-  if (state.timeRange === 'short_term') flightNo = 'SW04';
-  else if (state.timeRange === 'medium_term') flightNo = 'MM06';
-  else if (state.timeRange === 'long_term') flightNo = 'LT99';
-  
-  return {
-    flightTime,
-    cruisingAltitude,
-    baggageWeight,
-    passengerClass,
-    avgPopularity,
-    flightNo,
-    wavePeakY
-  };
+function getVisibleTracks() {
+  const tracks = state.isMockData ? MOCK_TRACKS : state.topTracks;
+  return tracks.slice(0, state.trackLimit);
 }
 
-// Toggles audio playback for a selected track preview
-function toggleTrackPreview(trackId, previewUrl) {
-  if (!previewUrl) return;
-  
-  if (state.currentlyPlayingTrackId === trackId) {
-    if (previewAudioInstance) {
-      previewAudioInstance.pause();
-    }
-    state.currentlyPlayingTrackId = null;
-  } else {
-    if (previewAudioInstance) {
-      previewAudioInstance.pause();
-    }
-    state.currentlyPlayingTrackId = trackId;
-    previewAudioInstance = new Audio(previewUrl);
-    previewAudioInstance.volume = 0.5;
-    previewAudioInstance.addEventListener('ended', () => {
-      state.currentlyPlayingTrackId = null;
-      renderApp();
-    });
-    previewAudioInstance.play().catch(e => {
-      console.warn('Playback failed:', e);
-      state.currentlyPlayingTrackId = null;
-      renderApp();
-    });
+function stopTrackPreview() {
+  if (previewEndTimer) {
+    window.clearTimeout(previewEndTimer);
+    previewEndTimer = null;
   }
-  renderApp();
+  if (previewAudioInstance) {
+    previewAudioInstance.pause();
+    previewAudioInstance.currentTime = 0;
+    previewAudioInstance = null;
+  }
+  state.currentlyPlayingTrackId = null;
+  updatePreviewState();
+}
+
+function playDemoPreview(track) {
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextClass) throw new Error('Web Audio is not supported');
+
+  const context = new AudioContextClass();
+  const frequencies = [261.63, 329.63, 392, 523.25, 392, 329.63];
+  frequencies.forEach((frequency, index) => {
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    const start = context.currentTime + index * 0.35;
+    oscillator.frequency.value = frequency;
+    gain.gain.setValueAtTime(0, start);
+    gain.gain.linearRampToValueAtTime(0.12, start + 0.03);
+    gain.gain.exponentialRampToValueAtTime(0.001, start + 0.3);
+    oscillator.connect(gain);
+    gain.connect(context.destination);
+    oscillator.start(start);
+    oscillator.stop(start + 0.32);
+  });
+
+  previewAudioInstance = { pause: () => context.close(), currentTime: 0 };
+  state.currentlyPlayingTrackId = track.id;
+  state.previewStatus = `Playing demo preview: ${track.name}`;
+  previewEndTimer = window.setTimeout(() => {
+    state.previewStatus = 'Demo preview finished.';
+    stopTrackPreview();
+  }, frequencies.length * 350 + 350);
+  updatePreviewState();
+}
+
+function updatePreviewState() {
+  document.querySelectorAll('.manifest-row').forEach(row => {
+    const isPlaying = row.dataset.trackId === state.currentlyPlayingTrackId;
+    row.classList.toggle('playing', isPlaying);
+    row.setAttribute('aria-pressed', String(isPlaying));
+    const icon = row.querySelector('.play-row-icon');
+    if (icon) icon.textContent = isPlaying ? '❚❚' : (row.dataset.hasPreview === 'true' ? '▶' : '↗');
+  });
+
+  const status = document.querySelector('.preview-status-slot');
+  if (status) status.textContent = state.previewStatus;
+}
+
+async function toggleTrackPreview(track) {
+  if (state.isMockData && track.preview_url === DEMO_PREVIEW_URL) {
+    if (state.currentlyPlayingTrackId === track.id) {
+      stopTrackPreview();
+      state.previewStatus = 'Preview paused.';
+      updatePreviewState();
+      return;
+    }
+    stopTrackPreview();
+    try {
+      playDemoPreview(track);
+    } catch (error) {
+      console.warn('Demo playback failed:', error);
+      state.previewStatus = 'Your browser could not start the demo preview.';
+      updatePreviewState();
+    }
+    return;
+  }
+
+  const previewUrl = safeMediaUrl(track?.preview_url);
+  if (!previewUrl) {
+    const spotifyUrl = safeHttpUrl(track?.external_urls?.spotify);
+    state.previewStatus = 'Spotify does not provide a preview for this track. Opening it in Spotify instead.';
+    updatePreviewState();
+    if (spotifyUrl) window.open(spotifyUrl, '_blank', 'noopener,noreferrer');
+    return;
+  }
+
+  if (state.currentlyPlayingTrackId === track.id) {
+    stopTrackPreview();
+    state.previewStatus = 'Preview paused.';
+    updatePreviewState();
+    return;
+  }
+
+  stopTrackPreview();
+  const audio = new Audio(previewUrl);
+  previewAudioInstance = audio;
+  audio.volume = 0.5;
+  audio.preload = 'auto';
+  audio.addEventListener('ended', () => {
+    state.previewStatus = 'Preview finished.';
+    stopTrackPreview();
+  }, { once: true });
+  audio.addEventListener('error', () => {
+    state.previewStatus = 'This preview could not be loaded. Open the track in Spotify instead.';
+    stopTrackPreview();
+  }, { once: true });
+
+  try {
+    await audio.play();
+    state.currentlyPlayingTrackId = track.id;
+    state.previewStatus = `Playing preview: ${track.name}`;
+  } catch (error) {
+    console.warn('Playback failed:', error);
+    state.previewStatus = 'Your browser blocked or could not load this preview.';
+    stopTrackPreview();
+  }
+  updatePreviewState();
+}
+
+function renderManifestRow(track, index, variant = 'main') {
+  const hasPreview = Boolean(safeMediaUrl(track.preview_url))
+    || (state.isMockData && track.preview_url === DEMO_PREVIEW_URL);
+  const hasSpotifyFallback = Boolean(safeHttpUrl(track.external_urls?.spotify));
+  const isPlaying = state.currentlyPlayingTrackId === track.id;
+  const trackName = escapeHtml(track.name || 'Unknown track');
+  const artistNames = escapeHtml(track.artists?.map(artist => artist.name).join(', ') || 'Unknown artist');
+  const trackId = escapeHtml(track.id || `track-${index}`);
+  const artworkUrl = safeHttpUrl(track.album?.images?.at(-1)?.url || track.album?.images?.[0]?.url);
+  const actionLabel = hasPreview ? 'Play preview' : 'Open in Spotify';
+  const unavailable = !hasPreview && !hasSpotifyFallback;
+  const artwork = artworkUrl
+    ? `<img class="manifest-artwork" src="${escapeHtml(artworkUrl)}" alt="" crossorigin="anonymous">`
+    : '';
+  const rowStyle = variant === 'tag'
+    ? 'font-size: 0.72rem; height: 22px; line-height: 1.35;'
+    : variant === 'stub'
+      ? 'font-size: 0.65rem; height: 18px; line-height: 1.35;'
+      : '';
+  const sequenceWidth = variant === 'stub' ? '14px' : '20px';
+  const durationWidth = variant === 'tag' ? '34px' : variant === 'stub' ? '28px' : 'auto';
+
+  return `
+    <button
+      type="button"
+      class="manifest-row ${isPlaying ? 'playing' : ''} ${hasPreview ? 'has-preview' : 'spotify-fallback'}"
+      style="${rowStyle}"
+      data-track-id="${trackId}"
+      data-track-index="${index}"
+      data-has-preview="${hasPreview}"
+      aria-label="${escapeHtml(`${actionLabel}: ${track.name || 'Unknown track'} by ${track.artists?.map(artist => artist.name).join(', ') || 'Unknown artist'}`)}"
+      aria-pressed="${isPlaying}"
+      ${unavailable ? 'disabled' : ''}
+    >
+      <span class="manifest-col-seq" style="flex-basis: ${sequenceWidth};">
+        <span class="audio-indicator" aria-hidden="true">
+          <span class="audio-bar"></span><span class="audio-bar"></span><span class="audio-bar"></span>
+        </span>
+        <span class="manifest-sequence">${(index + 1).toString().padStart(2, '0')}</span>
+      </span>
+      <span class="manifest-col-desc">
+        ${artwork}
+        <span class="play-row-icon" aria-hidden="true">${hasPreview ? '▶' : '↗'}</span>
+        <strong>${trackName}</strong> <span>- ${artistNames}</span>
+      </span>
+      <span class="manifest-col-dur" style="flex-basis: ${durationWidth};">${formatDuration(track.duration_ms)}</span>
+    </button>
+  `;
 }
 
 // Renders the luggage tag companion HTML template
 function renderLuggageTagHTML(meta, stats, tracksList) {
-  const topTrack = tracksList[0] || { name: 'TOP TRACK', artists: [{ name: 'ARTIST' }] };
-  
   return `
     <div class="luggage-tag" data-theme="${state.theme}">
       <div class="tag-top-spacer"></div>
@@ -233,11 +349,11 @@ function renderLuggageTagHTML(meta, stats, tracksList) {
       <div class="tag-info-grid">
         <div class="tag-info-cell-wide">
           <div class="lbl">Passenger</div>
-          <div class="val" style="font-size: 0.95rem; line-height: 1.2;">${meta.passenger}</div>
+          <div class="val" data-ticket-field="passenger" style="font-size: 0.95rem; line-height: 1.2;">${meta.passenger}</div>
         </div>
         <div>
           <div class="lbl">Seat</div>
-          <div class="val" style="color: var(--accent-secondary); font-size: 0.95rem;">${meta.seat}</div>
+          <div class="val" data-ticket-field="seat" style="color: var(--accent-secondary); font-size: 0.95rem;">${meta.seat}</div>
         </div>
         <div>
           <div class="lbl">Flight</div>
@@ -253,28 +369,7 @@ function renderLuggageTagHTML(meta, stats, tracksList) {
       <div class="tag-cargo-manifest">
         <div class="tag-cargo-title">Stopover Manifest / Cargo Details</div>
         <div class="manifest-list" style="margin-bottom: 0.85rem; display: flex; flex-direction: column; gap: 0.45rem;">
-          ${tracksList.slice(0, 5).map((track, i) => {
-            const hasPreview = !!track.preview_url;
-            const isPlaying = state.currentlyPlayingTrackId === track.id;
-            return `
-              <div class="manifest-row ${isPlaying ? 'playing' : ''} ${hasPreview ? 'has-preview' : ''}" style="font-size: 0.72rem; height: 18px; display: flex; justify-content: space-between; align-items: center; line-height: 1.35; overflow: visible;" data-track-id="${track.id || `mock-${i}`}" data-preview-url="${track.preview_url || ''}">
-                <span style="color: var(--accent-secondary); flex: 0 0 18px; font-weight: 800; display: inline-flex; align-items: center;">
-                  ${isPlaying ? `
-                    <span class="audio-indicator" style="margin-left: 0; width: 8px; height: 8px;">
-                      <span class="audio-bar" style="width: 1.5px;"></span>
-                      <span class="audio-bar" style="width: 1.5px;"></span>
-                      <span class="audio-bar" style="width: 1.5px;"></span>
-                    </span>
-                  ` : (i + 1).toString().padStart(2, '0')}
-                </span>
-                <span style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 2px 0.5rem 2px 0; margin: -2px 0; text-align: left; display: block; line-height: inherit;">
-                  ${hasPreview ? `<span class="play-row-icon" style="font-size: 0.55rem; margin-right: 2px;">▶</span>` : ''}
-                  <strong>${track.name}</strong> <span style="font-weight:500; color: var(--card-text-muted); margin-left: 4px;">- ${track.artists.map(a => a.name).join(', ')}</span>
-                </span>
-                <span style="font-family: var(--font-mono); color: var(--card-text-muted); font-size: 0.65rem; flex: 0 0 34px; text-align: right;">${formatDuration(track.duration_ms)}</span>
-              </div>
-            `;
-          }).join('')}
+          ${tracksList.slice(0, 5).map((track, index) => renderManifestRow(track, index, 'tag')).join('')}
         </div>
         
         <div class="tag-cargo-title">Aviation Load Specs</div>
@@ -401,7 +496,6 @@ function getTicketMetadata() {
   }
   
   let gate = 'G12';
-  let dateText = '01 JUN 26';
   let classText = 'PREMIUM CLASS';
   let pnr = 'S5N8C1'; // Deterministic booking reference
   
@@ -431,7 +525,6 @@ function getTicketMetadata() {
     passenger: state.customPassengerName || formattedUser,
     seat: state.customSeat || '01A',
     gate,
-    dateText,
     classText,
     pnr,
     barcodeMainVal,
@@ -440,14 +533,43 @@ function getTicketMetadata() {
   };
 }
 
+function currentPreferences() {
+  return {
+    timeRange: state.timeRange,
+    theme: state.theme,
+    previewMode: state.previewMode,
+    trackLimit: state.trackLimit
+  };
+}
+
+function persistPreferences() {
+  window.localStorage.setItem(PREFERENCES_KEY, JSON.stringify(currentPreferences()));
+  window.history.replaceState({}, document.title, buildPresetUrl(window.location, currentPreferences()));
+}
+
+function updateTicketFields() {
+  const meta = getTicketMetadata();
+  document.querySelectorAll('[data-ticket-field="passenger"]').forEach(element => {
+    element.textContent = meta.passenger;
+  });
+  document.querySelectorAll('[data-ticket-field="seat"]').forEach(element => {
+    element.textContent = meta.seat;
+  });
+}
+
 // Main HTML Generator
 function renderApp() {
   const root = document.querySelector('#app');
   if (!root) return;
 
-  const meta = getTicketMetadata();
-  const tracksList = state.isMockData ? MOCK_TRACKS : state.topTracks;
-  const stats = getCargoStats(tracksList);
+  const rawMeta = getTicketMetadata();
+  const meta = Object.fromEntries(
+    Object.entries(rawMeta).map(([key, value]) => [key, escapeHtml(value)])
+  );
+  const tracksList = getVisibleTracks();
+  const stats = calculateCargoStats(tracksList, state.timeRange);
+  const avatarUrl = safeHttpUrl(state.userProfile?.images?.[0]?.url)
+    || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y';
 
   root.innerHTML = `
     <header>
@@ -482,12 +604,12 @@ function renderApp() {
           
           ${state.isLoggedIn ? `
             <div class="user-profile">
-              <img class="user-avatar" src="${state.userProfile?.images?.[0]?.url || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y'}" alt="Avatar">
+              <img class="user-avatar" src="${escapeHtml(avatarUrl)}" alt="Spotify profile avatar" crossorigin="anonymous">
               <div class="user-details">
-                <span class="user-name">${state.userProfile?.display_name || 'Traveler'}</span>
-                <span class="user-sub">${state.userProfile?.email || 'Connected'}</span>
+                <span class="user-name">${escapeHtml(state.userProfile?.display_name || 'Traveler')}</span>
+                <span class="user-sub">${escapeHtml(state.userProfile?.email || 'Connected')}</span>
               </div>
-              <button id="logout-btn" class="btn btn-outline btn-logout" title="Logout">
+              <button id="logout-btn" class="btn btn-outline btn-logout" title="Logout" aria-label="Disconnect Spotify">
                 ${ICONS.logout}
               </button>
             </div>
@@ -495,7 +617,7 @@ function renderApp() {
             ${!ENV_CLIENT_ID ? `
               <div class="input-group">
                 <label class="input-label" for="client-id-field">Spotify Client ID</label>
-                <input type="text" id="client-id-field" class="input-field" placeholder="Enter your Spotify Client ID..." value="${state.clientId}">
+                <input type="text" id="client-id-field" class="input-field" placeholder="Enter your Spotify Client ID..." value="${escapeHtml(state.clientId)}" autocomplete="off" spellcheck="false">
                 <p class="help-text">
                   Need a client ID? Check <a href="#explainer-sec">instructions below</a> to set up in 2 minutes. Authentication runs client-side only.
                 </p>
@@ -515,20 +637,29 @@ function renderApp() {
           <div class="input-group">
             <span class="input-label">Flight Duration (Time Period)</span>
             <div class="tabs-selector">
-              <button class="tab-btn ${state.timeRange === 'short_term' ? 'active' : ''}" data-range="short_term">4 Weeks</button>
-              <button class="tab-btn ${state.timeRange === 'medium_term' ? 'active' : ''}" data-range="medium_term">6 Months</button>
-              <button class="tab-btn ${state.timeRange === 'long_term' ? 'active' : ''}" data-range="long_term">All-Time</button>
+              <button class="tab-btn ${state.timeRange === 'short_term' ? 'active' : ''}" data-range="short_term" aria-pressed="${state.timeRange === 'short_term'}">4 Weeks</button>
+              <button class="tab-btn ${state.timeRange === 'medium_term' ? 'active' : ''}" data-range="medium_term" aria-pressed="${state.timeRange === 'medium_term'}">6 Months</button>
+              <button class="tab-btn ${state.timeRange === 'long_term' ? 'active' : ''}" data-range="long_term" aria-pressed="${state.timeRange === 'long_term'}">1 Year</button>
             </div>
           </div>
 
           <div class="input-group">
             <label class="input-label" for="passenger-name-field">Passenger Name Override</label>
-            <input type="text" id="passenger-name-field" class="input-field" placeholder="e.g. SMITH / JOHN MR" value="${state.customPassengerName}">
+            <input type="text" id="passenger-name-field" class="input-field" placeholder="e.g. SMITH / JOHN MR" value="${escapeHtml(state.customPassengerName)}" maxlength="40">
           </div>
 
           <div class="input-group">
             <label class="input-label" for="seat-field">Seat Code</label>
-            <input type="text" id="seat-field" class="input-field" placeholder="e.g. 01A" value="${state.customSeat}" maxlength="4">
+            <input type="text" id="seat-field" class="input-field" placeholder="e.g. 01A" value="${escapeHtml(state.customSeat)}" maxlength="4">
+          </div>
+
+          <div class="input-group">
+            <label class="input-label" for="track-limit-field">Tracks on Ticket</label>
+            <select id="track-limit-field" class="input-field">
+              <option value="5" ${state.trackLimit === 5 ? 'selected' : ''}>Top 5</option>
+              <option value="8" ${state.trackLimit === 8 ? 'selected' : ''}>Top 8</option>
+              <option value="10" ${state.trackLimit === 10 ? 'selected' : ''}>Top 10</option>
+            </select>
           </div>
         </div>
 
@@ -536,10 +667,10 @@ function renderApp() {
         <div class="panel-section">
           <h3>3. Boarding Pass Style</h3>
           <div class="theme-picker">
-            <button class="theme-btn ${state.theme === 'classic' ? 'active' : ''}" data-theme-val="classic">Classic</button>
-            <button class="theme-btn ${state.theme === 'midnight' ? 'active' : ''}" data-theme-val="midnight">Midnight</button>
-            <button class="theme-btn ${state.theme === 'stark' ? 'active' : ''}" data-theme-val="stark">Stark</button>
-            <button class="theme-btn ${state.theme === 'forest' ? 'active' : ''}" data-theme-val="forest">Forest</button>
+            <button class="theme-btn ${state.theme === 'classic' ? 'active' : ''}" data-theme-val="classic" aria-pressed="${state.theme === 'classic'}">Classic</button>
+            <button class="theme-btn ${state.theme === 'midnight' ? 'active' : ''}" data-theme-val="midnight" aria-pressed="${state.theme === 'midnight'}">Midnight</button>
+            <button class="theme-btn ${state.theme === 'stark' ? 'active' : ''}" data-theme-val="stark" aria-pressed="${state.theme === 'stark'}">Stark</button>
+            <button class="theme-btn ${state.theme === 'forest' ? 'active' : ''}" data-theme-val="forest" aria-pressed="${state.theme === 'forest'}">Forest</button>
           </div>
         </div>
 
@@ -553,6 +684,10 @@ function renderApp() {
           
           <button id="clipboard-btn" class="btn btn-outline btn-clipboard" style="margin-bottom: 0.5rem;">
             Copy to Clipboard
+          </button>
+
+          <button id="share-btn" class="btn btn-outline" style="margin-bottom: 0.5rem;">
+            Share Preset
           </button>
           
           <div class="clipboard-status-slot" aria-live="polite">
@@ -568,6 +703,7 @@ function renderApp() {
               </div>
             ` : ''}
           </div>
+          <div class="share-status-slot status-text" aria-live="polite">${escapeHtml(state.shareStatus)}</div>
         </div>
 
       </section>
@@ -577,15 +713,15 @@ function renderApp() {
         
         <!-- Preview Mode Toggles -->
         <div class="preview-toggle-bar">
-          <button class="toggle-btn ${state.previewMode === 'ticket' ? 'active' : ''}" data-mode="ticket">Boarding Pass</button>
-          <button class="toggle-btn ${state.previewMode === 'tag' ? 'active' : ''}" data-mode="tag">Luggage Tag</button>
+          <button class="toggle-btn ${state.previewMode === 'ticket' ? 'active' : ''}" data-mode="ticket" aria-pressed="${state.previewMode === 'ticket'}">Boarding Pass</button>
+          <button class="toggle-btn ${state.previewMode === 'tag' ? 'active' : ''}" data-mode="tag" aria-pressed="${state.previewMode === 'tag'}">Luggage Tag</button>
         </div>
 
         <!-- Error notification if any -->
         ${state.errorMessage ? `
-          <div class="error-container">
+          <div class="error-container" role="alert">
             ${ICONS.warning}
-            <span>${state.errorMessage}</span>
+            <span>${escapeHtml(state.errorMessage)}</span>
           </div>
         ` : ''}
 
@@ -642,11 +778,11 @@ function renderApp() {
                     <div class="data-matrix">
                       <div class="data-cell passenger-name">
                         <div class="lbl">Passenger Name</div>
-                        <div class="val">${meta.passenger}</div>
+                        <div class="val" data-ticket-field="passenger">${meta.passenger}</div>
                       </div>
                       <div class="data-cell">
                         <div class="lbl">Seat</div>
-                        <div class="val" style="color: var(--accent-secondary);">${meta.seat}</div>
+                        <div class="val" data-ticket-field="seat" style="color: var(--accent-secondary);">${meta.seat}</div>
                       </div>
                       <div class="data-cell">
                         <div class="lbl">Duration</div>
@@ -674,28 +810,7 @@ function renderApp() {
                     <div class="manifest-table">
                       <div class="manifest-title">Stopover Manifest / Flight Itinerary</div>
                       <div class="manifest-list">
-                        ${tracksList.slice(0, 5).map((track, i) => {
-                          const hasPreview = !!track.preview_url;
-                          const isPlaying = state.currentlyPlayingTrackId === track.id;
-                          return `
-                            <div class="manifest-row ${isPlaying ? 'playing' : ''} ${hasPreview ? 'has-preview' : ''}" data-track-id="${track.id || `mock-${i}`}" data-preview-url="${track.preview_url || ''}">
-                              <span class="manifest-col-seq">
-                                ${isPlaying ? `
-                                  <span class="audio-indicator">
-                                    <span class="audio-bar"></span>
-                                    <span class="audio-bar"></span>
-                                    <span class="audio-bar"></span>
-                                  </span>
-                                ` : (i + 1).toString().padStart(2, '0')}
-                              </span>
-                              <div class="manifest-col-desc">
-                                ${hasPreview ? `<span class="play-row-icon">▶</span>` : ''}
-                                <strong>${track.name}</strong> <span>- ${track.artists.map(a => a.name).join(', ')}</span>
-                              </div>
-                              <span class="manifest-col-dur">${formatDuration(track.duration_ms)}</span>
-                            </div>
-                          `;
-                        }).join('')}
+                        ${tracksList.slice(0, 5).map((track, index) => renderManifestRow(track, index)).join('')}
                       </div>
                     </div>
 
@@ -733,11 +848,11 @@ function renderApp() {
                     <div class="stub-grid" style="margin-bottom: 0.5rem;">
                       <div class="cell-wide">
                         <div class="lbl">Passenger</div>
-                        <div class="val" style="font-size: 0.72rem;">${meta.passenger}</div>
+                        <div class="val" data-ticket-field="passenger" style="font-size: 0.72rem;">${meta.passenger}</div>
                       </div>
                       <div>
                         <div class="lbl">Seat</div>
-                        <div class="val" style="font-size: 0.72rem; color: var(--accent-secondary);">${meta.seat}</div>
+                        <div class="val" data-ticket-field="seat" style="font-size: 0.72rem; color: var(--accent-secondary);">${meta.seat}</div>
                       </div>
                       <div>
                         <div class="lbl">Flight</div>
@@ -754,33 +869,14 @@ function renderApp() {
                     </div>
 
                     <!-- Right manifest: Connection Tracks 06-10 -->
-                    <div class="stub-manifest-table" style="margin-top: 0.4rem; margin-bottom: auto; border-top: 1px solid var(--dotted-line-color); padding-top: 0.4rem; overflow: hidden;">
-                      <div class="lbl" style="font-size: 0.55rem; font-weight: 850; color: var(--accent-secondary); margin-bottom: 0.3rem;">Connection Stops 06-10</div>
-                      <div class="manifest-list" style="gap: 0.3rem;">
-                        ${tracksList.slice(5, 10).map((track, i) => {
-                          const hasPreview = !!track.preview_url;
-                          const isPlaying = state.currentlyPlayingTrackId === track.id;
-                          return `
-                            <div class="manifest-row ${isPlaying ? 'playing' : ''} ${hasPreview ? 'has-preview' : ''}" style="font-size: 0.65rem; height: 16px; display: flex; justify-content: space-between; font-weight: 700; align-items: center; overflow: visible; line-height: 1.35;" data-track-id="${track.id || `mock-${i+5}`}" data-preview-url="${track.preview_url || ''}">
-                              <span style="color: var(--accent-secondary); flex: 0 0 14px; font-weight: 800; display: flex; align-items: center;">
-                                ${isPlaying ? `
-                                  <span class="audio-indicator" style="margin-left: 0; width: 8px; height: 8px;">
-                                    <span class="audio-bar" style="width: 1.5px;"></span>
-                                    <span class="audio-bar" style="width: 1.5px;"></span>
-                                    <span class="audio-bar" style="width: 1.5px;"></span>
-                                  </span>
-                                ` : (i + 6).toString().padStart(2, '0')}
-                              </span>
-                              <span style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 2px 0.25rem 2px 0; margin: -2px 0; text-align: left; display: block; line-height: inherit;">
-                                ${hasPreview ? `<span class="play-row-icon" style="font-size: 0.5rem; margin-right: 2px;">▶</span>` : ''}
-                                <strong>${track.name}</strong> <span style="font-weight:500; color: var(--card-text-muted);">- ${track.artists[0].name}</span>
-                              </span>
-                              <span style="font-family: var(--font-mono); color: var(--card-text-muted); font-size: 0.6rem; flex: 0 0 28px; text-align: right;">${formatDuration(track.duration_ms)}</span>
-                            </div>
-                          `;
-                        }).join('')}
+                    ${tracksList.length > 5 ? `
+                      <div class="stub-manifest-table" style="margin-top: 0.4rem; margin-bottom: auto; border-top: 1px solid var(--dotted-line-color); padding-top: 0.4rem; overflow: hidden;">
+                        <div class="lbl" style="font-size: 0.55rem; font-weight: 850; color: var(--accent-secondary); margin-bottom: 0.3rem;">Connection Stops 06-${tracksList.length.toString().padStart(2, '0')}</div>
+                        <div class="manifest-list" style="gap: 0.3rem;">
+                          ${tracksList.slice(5, 10).map((track, index) => renderManifestRow(track, index + 5, 'stub')).join('')}
+                        </div>
                       </div>
-                    </div>
+                    ` : '<div style="margin-bottom: auto;"></div>'}
 
                     <div class="barcode-vertical-box">
                       ${BARCODES.vertical}
@@ -794,6 +890,7 @@ function renderApp() {
             </div>
           </div>
         `}
+        <div class="preview-status-slot status-text" aria-live="polite">${escapeHtml(state.previewStatus)}</div>
       </section>
     </main>
 
@@ -805,7 +902,7 @@ function renderApp() {
           <li>Log in to the <strong><a href="https://developer.spotify.com/dashboard" target="_blank" rel="noopener">Spotify Developer Dashboard</a></strong>.</li>
           <li>Select <strong>Create App</strong> (Name it anything: e.g. <em>My Boarding Pass</em>).</li>
           <li>Configure the <strong>Redirect URI</strong> field to exactly match your current URL: 
-            <code>${window.location.origin + window.location.pathname}</code>
+            <code>${escapeHtml(window.location.origin + window.location.pathname)}</code>
           </li>
           <li>Enable <strong>Web API</strong> checkbox under settings and Save.</li>
           <li>Copy your <strong>Client ID</strong> from the app info, paste it in the sidebar box, and click <strong>Connect Spotify</strong>!</li>
@@ -864,11 +961,7 @@ function bindEvents() {
       state.topTracks = [];
       state.isMockData = true;
       state.errorMessage = '';
-      state.playlistUrl = '';
-      state.currentlyPlayingTrackId = null;
-      if (previewAudioInstance) {
-        previewAudioInstance.pause();
-      }
+      stopTrackPreview();
       renderApp();
     });
   }
@@ -880,16 +973,13 @@ function bindEvents() {
       if (range === state.timeRange) return;
       
       state.timeRange = range;
-      state.playlistUrl = ''; // Reset playlist creation URL feedback when time range changes
+      persistPreferences();
       
       if (range === 'short_term') state.customSeat = '22A';
       else if (range === 'medium_term') state.customSeat = '01A';
       else if (range === 'long_term') state.customSeat = '07F';
 
-      if (previewAudioInstance) {
-        previewAudioInstance.pause();
-        state.currentlyPlayingTrackId = null;
-      }
+      stopTrackPreview();
 
       if (!state.isMockData && state.token) {
         state.isLoading = true;
@@ -912,7 +1002,7 @@ function bindEvents() {
   if (passNameField) {
     passNameField.addEventListener('input', (e) => {
       state.customPassengerName = e.target.value.toUpperCase();
-      renderApp(); // Rerender to ensure name flows perfectly in all layouts (boarding pass main, stub, and luggage tag)
+      updateTicketFields();
     });
   }
 
@@ -920,7 +1010,19 @@ function bindEvents() {
   if (seatField) {
     seatField.addEventListener('input', (e) => {
       state.customSeat = e.target.value.toUpperCase();
-      renderApp(); // Rerender to propagate seat numbers
+      updateTicketFields();
+    });
+  }
+
+  const trackLimitField = document.getElementById('track-limit-field');
+  if (trackLimitField) {
+    trackLimitField.addEventListener('change', (event) => {
+      const trackLimit = Number(event.target.value);
+      if (!ALLOWED_TRACK_LIMITS.has(trackLimit)) return;
+      state.trackLimit = trackLimit;
+      stopTrackPreview();
+      persistPreferences();
+      renderApp();
     });
   }
 
@@ -928,10 +1030,16 @@ function bindEvents() {
   themeBtns.forEach(btn => {
     btn.addEventListener('click', (e) => {
       const themeName = e.currentTarget.getAttribute('data-theme-val');
+      if (!ALLOWED_THEMES.has(themeName)) return;
       state.theme = themeName;
+      persistPreferences();
       
-      document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.theme-btn').forEach(b => {
+        b.classList.remove('active');
+        b.setAttribute('aria-pressed', 'false');
+      });
       e.currentTarget.classList.add('active');
+      e.currentTarget.setAttribute('aria-pressed', 'true');
       
       const passCard = document.querySelector('.boarding-pass');
       if (passCard) {
@@ -949,8 +1057,11 @@ function bindEvents() {
   modeBtns.forEach(btn => {
     btn.addEventListener('click', (e) => {
       const mode = e.currentTarget.getAttribute('data-mode');
+      if (!ALLOWED_PREVIEW_MODES.has(mode)) return;
       if (mode === state.previewMode) return;
       state.previewMode = mode;
+      stopTrackPreview();
+      persistPreferences();
       renderApp();
     });
   });
@@ -958,14 +1069,37 @@ function bindEvents() {
   // Track row clicks to play previews
   const trackRows = document.querySelectorAll('.manifest-row');
   trackRows.forEach(row => {
-    row.addEventListener('click', () => {
-      const trackId = row.getAttribute('data-track-id');
-      const previewUrl = row.getAttribute('data-preview-url');
-      if (previewUrl) {
-        toggleTrackPreview(trackId, previewUrl);
-      }
+    row.addEventListener('click', async () => {
+      const track = getVisibleTracks()[Number(row.dataset.trackIndex)];
+      if (track) await toggleTrackPreview(track);
     });
   });
+
+  const shareBtn = document.getElementById('share-btn');
+  if (shareBtn) {
+    shareBtn.addEventListener('click', async () => {
+      const presetUrl = buildPresetUrl(window.location, currentPreferences());
+      try {
+        if (navigator.share) {
+          await navigator.share({
+            title: 'TuneTicket preset',
+            text: 'Create a Spotify boarding pass with this TuneTicket style.',
+            url: presetUrl
+          });
+          state.shareStatus = 'Preset shared.';
+        } else {
+          await navigator.clipboard.writeText(presetUrl);
+          state.shareStatus = 'Preset link copied.';
+        }
+      } catch (error) {
+        if (error.name === 'AbortError') return;
+        console.warn('Sharing failed:', error);
+        state.shareStatus = 'Could not share this preset.';
+      }
+      const status = document.querySelector('.share-status-slot');
+      if (status) status.textContent = state.shareStatus;
+    });
+  }
 
   const downloadBtn = document.getElementById('download-btn');
   if (downloadBtn) {
@@ -984,7 +1118,8 @@ function bindEvents() {
         const cleanName = (state.customPassengerName || (state.isMockData ? MOCK_PROFILE.display_name : state.userProfile?.display_name) || 'boardingpass')
           .trim()
           .toLowerCase()
-          .replace(/\s+/g, '-');
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-|-$/g, '') || 'boardingpass';
         
         await exportElementAsImage(targetCard, `tuneticket-${state.previewMode}-${cleanName}.png`);
         state.errorMessage = '';
@@ -1045,7 +1180,7 @@ function bindEvents() {
             setClipboardStatus('');
           }
         }, 4000);
-      } catch (err) {
+      } catch {
         setClipboardStatus('error');
         setTimeout(() => {
           if (state.clipboardStatus === 'error') {
@@ -1059,7 +1194,6 @@ function bindEvents() {
     });
   }
 
-  // Playlist creation button listener removed as requested
 }
 
 // Check tokens on redirect callback
@@ -1069,19 +1203,23 @@ async function initApp() {
 
   const urlParams = new URLSearchParams(window.location.search);
   const code = urlParams.get('code');
+  const returnedState = urlParams.get('state');
+  const authorizationError = urlParams.get('error');
 
   try {
+    if (authorizationError) {
+      throw new Error('Spotify authorization was cancelled or denied.');
+    }
+
     if (code) {
       if (!state.clientId) {
         throw new Error('Spotify Client ID is required to authorize. Please configure it first.');
       }
       
-      state.token = await exchangeCodeForToken(state.clientId, code);
+      state.token = await exchangeCodeForToken(state.clientId, code, returnedState);
       state.isLoggedIn = true;
       state.isMockData = false;
 
-      const cleanUrl = window.location.origin + window.location.pathname;
-      window.history.replaceState({}, document.title, cleanUrl);
     } else {
       if (state.clientId) {
         const token = await getAccessToken(state.clientId);
@@ -1107,6 +1245,9 @@ async function initApp() {
     state.isMockData = true;
     state.isLoggedIn = false;
   } finally {
+    if (code || authorizationError) {
+      window.history.replaceState({}, document.title, buildPresetUrl(window.location, currentPreferences()));
+    }
     state.isLoading = false;
     renderApp();
   }

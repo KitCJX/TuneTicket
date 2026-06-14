@@ -749,6 +749,13 @@ header p {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  text-align: left;
   font-size: 0.72rem;
   line-height: 1.35;
   font-weight: 700;
@@ -768,7 +775,8 @@ header p {
   text-overflow: ellipsis;
   white-space: nowrap;
   padding-right: 0.75rem;
-  display: block; 
+  display: flex;
+  align-items: center;
   line-height: inherit;
   padding-top: 2px;
   padding-bottom: 2px;
@@ -1059,15 +1067,6 @@ header p {
   margin-top: 0.5rem;
 }
 
-.btn-playlist-create {
-  background: #a855f7;
-  color: #ffffff;
-}
-
-.btn-playlist-create:hover:not(:disabled) {
-  background: #c084fc;
-}
-
 .playlist-success-box {
   background: rgba(16, 185, 129, 0.08);
   border: 1px solid rgba(16, 185, 129, 0.25);
@@ -1297,8 +1296,19 @@ header p {
   transition: padding-left 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.manifest-row:hover {
+.manifest-row:not(:disabled):hover {
   padding-left: 12px;
+}
+
+.manifest-row:disabled {
+  cursor: default;
+  opacity: 0.72;
+}
+
+.manifest-row:focus-visible {
+  outline: 2px solid var(--accent-secondary);
+  outline-offset: 2px;
+  border-radius: 3px;
 }
 
 /* Play Indicator Overlay Icon */
@@ -1315,7 +1325,9 @@ header p {
   vertical-align: middle;
 }
 
-.manifest-row:hover .play-row-icon {
+.manifest-row:hover .play-row-icon,
+.manifest-row:focus-visible .play-row-icon,
+.spotify-fallback .play-row-icon {
   opacity: 0.8;
 }
 
@@ -1337,13 +1349,46 @@ header p {
 
 /* Real-Time Animated Equalizer Bars */
 .audio-indicator {
-  display: inline-flex;
+  display: none;
   align-items: flex-end;
   gap: 1.5px;
   width: 10px;
   height: 10px;
   margin-left: 0.4rem;
   vertical-align: middle;
+}
+
+.manifest-row.playing .audio-indicator {
+  display: inline-flex;
+}
+
+.manifest-row.playing .manifest-sequence {
+  display: none;
+}
+
+.manifest-artwork {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  border-radius: 2px;
+  object-fit: cover;
+  margin-right: 4px;
+}
+
+.status-text {
+  min-height: 1rem;
+  margin-top: 0.35rem;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  line-height: 1.35;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 3px solid rgba(29, 185, 84, 0.45);
+  outline-offset: 2px;
 }
 
 .audio-bar {
@@ -1368,6 +1413,17 @@ header p {
 @keyframes bounce-bar {
   0% { transform: scaleY(0.25); }
   100% { transform: scaleY(1.0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* SVG curved route animation adjustments */

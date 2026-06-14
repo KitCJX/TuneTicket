@@ -1,6 +1,14 @@
 // Spotify API PKCE Authentication and Fetching module
 
 const SCOPES = 'user-read-private user-read-email user-top-read';
+const LEGACY_TOKEN_KEYS = [
+  'spotify_access_token',
+  'spotify_refresh_token',
+  'spotify_token_expires_at',
+  'spotify_code_verifier'
+];
+
+LEGACY_TOKEN_KEYS.forEach(key => window.localStorage.removeItem(key));
 
 // Helper to generate a random string for the code verifier
 function generateRandomString(length) {
@@ -27,7 +35,9 @@ function base64urlencode(a) {
 // Redirect the user to the Spotify authorization page
 export async function redirectToSpotify(clientId) {
   const codeVerifier = generateRandomString(64);
-  window.localStorage.setItem('spotify_code_verifier', codeVerifier);
+  const authorizationState = generateRandomString(32);
+  window.sessionStorage.setItem('spotify_code_verifier', codeVerifier);
+  window.sessionStorage.setItem('spotify_authorization_state', authorizationState);
 
   const hashed = await sha256(codeVerifier);
   const codeChallenge = base64urlencode(hashed);
@@ -41,6 +51,7 @@ export async function redirectToSpotify(clientId) {
     scope: SCOPES,
     code_challenge_method: 'S256',
     code_challenge: codeChallenge,
+    state: authorizationState,
     redirect_uri: redirectUri,
   };
 
@@ -49,9 +60,14 @@ export async function redirectToSpotify(clientId) {
 }
 
 // Exchange the authorization code for access and refresh tokens
-export async function exchangeCodeForToken(clientId, code) {
-  const codeVerifier = window.localStorage.getItem('spotify_code_verifier');
+export async function exchangeCodeForToken(clientId, code, returnedState) {
+  const codeVerifier = window.sessionStorage.getItem('spotify_code_verifier');
+  const expectedState = window.sessionStorage.getItem('spotify_authorization_state');
   const redirectUri = window.location.origin + window.location.pathname;
+
+  if (!codeVerifier || !expectedState || returnedState !== expectedState) {
+    throw new Error('Spotify authorization could not be verified. Please connect again.');
+  }
 
   const body = new URLSearchParams({
     grant_type: 'authorization_code',
@@ -74,12 +90,14 @@ export async function exchangeCodeForToken(clientId, code) {
 
   const data = await response.json();
   saveTokenData(data);
+  window.sessionStorage.removeItem('spotify_code_verifier');
+  window.sessionStorage.removeItem('spotify_authorization_state');
   return data.access_token;
 }
 
 // Refresh the access token using the refresh token
 export async function refreshAccessToken(clientId) {
-  const refreshToken = window.localStorage.getItem('spotify_refresh_token');
+  const refreshToken = window.sessionStorage.getItem('spotify_refresh_token');
   if (!refreshToken) throw new Error('No refresh token available');
 
   const body = new URLSearchParams({
@@ -107,8 +125,8 @@ export async function refreshAccessToken(clientId) {
 
 // Check and return valid access token (refreshes if expired)
 export async function getAccessToken(clientId) {
-  const token = window.localStorage.getItem('spotify_access_token');
-  const expiresAt = window.localStorage.getItem('spotify_token_expires_at');
+  const token = window.sessionStorage.getItem('spotify_access_token');
+  const expiresAt = window.sessionStorage.getItem('spotify_token_expires_at');
 
   if (!token || !expiresAt) return null;
 
@@ -126,15 +144,22 @@ export async function getAccessToken(clientId) {
 }
 
 function saveTokenData(data) {
-  window.localStorage.setItem('spotify_access_token', data.access_token);
+  window.sessionStorage.setItem('spotify_access_token', data.access_token);
   if (data.refresh_token) {
-    window.localStorage.setItem('spotify_refresh_token', data.refresh_token);
+    window.sessionStorage.setItem('spotify_refresh_token', data.refresh_token);
   }
   const expiresAt = Date.now() + data.expires_in * 1000;
-  window.localStorage.setItem('spotify_token_expires_at', expiresAt.toString());
+  window.sessionStorage.setItem('spotify_token_expires_at', expiresAt.toString());
 }
 
 export function logout() {
+  window.sessionStorage.removeItem('spotify_access_token');
+  window.sessionStorage.removeItem('spotify_refresh_token');
+  window.sessionStorage.removeItem('spotify_token_expires_at');
+  window.sessionStorage.removeItem('spotify_code_verifier');
+  window.sessionStorage.removeItem('spotify_authorization_state');
+
+  // Remove tokens written by older TuneTicket versions.
   window.localStorage.removeItem('spotify_access_token');
   window.localStorage.removeItem('spotify_refresh_token');
   window.localStorage.removeItem('spotify_token_expires_at');
@@ -168,5 +193,3 @@ export async function fetchTopTracks(token, timeRange = 'medium_term', limit = 1
   const data = await response.json();
   return data.items;
 }
-
-// createSpotifyPlaylist removed as requested by the user
